@@ -1,0 +1,9 @@
+
+struct tile
+{
+    char* name;
+    int top;
+    int bottom;
+    int right;
+    int left;
+};
