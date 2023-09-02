@@ -1,31 +1,50 @@
-#define TILECNT 10
-struct TreeTile
+/*
+   Tile Definitions for wave fuction collapse algorithm
+*/
+
+#ifndef _TILES_H
+#define _TILES_H
+
+#define TILE_COUNT 10
+
+struct tile_s
 {
-   const char* name ="tree";
-   const char ascii = '^';
-   const float ajacency[TILECNT];
-   const int id = 94;
+   const char* name;
+   const char ascii;
+   const float adjacency[TILE_COUNT];
+   const int id;
 };
 
-struct mountainTile
+static struct tile_s treeTile = 
 {
-   const char* name = "mountain";
-   const char ascii = '%';
-   const float ajacency[TILECNT];
-   const int id = 37;
+   .name = "tree",
+   .ascii = '^',
+   .adjacency = {0.f},
+   .id = 94,
 };
 
-struct tallGrass
+struct tile_s mountainTile = 
 {
-   const char* name = "tall-grass";
-   const char ascii = ':';
-   const float ajacency[TILECNT];
-   const int id = 58;
+   .name = "mountain",
+   .ascii = '%',
+   .adjacency = {0.f},
+   .id = 37,
 };
 
-struct clearing
+struct tile_s tallGrass = 
 {
-   const char* name = "clearing";
-   const char ascii = '.';
-   const float adjacency[TILECNT];
-    const int id = 46;
+   .name = "tall-grass",
+   .ascii = ':',
+   .adjacency = {0.f},
+   .id = 58,
+};
+
+struct tile_s clearing = 
+{
+   .name = "clearing",
+   .ascii = '.',
+   .adjacency = {0.f},
+   .id = 46,
+};
+
+#endif /* _TILES_H */
