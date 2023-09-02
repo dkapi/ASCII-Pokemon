@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define GRID_HEIGHT 80
-#define GRID_WIDTH 24
+#define GRID_HEIGHT 24
+#define GRID_WIDTH 80
 
 static int8_t gridMatrix[GRID_HEIGHT][GRID_WIDTH];
 
