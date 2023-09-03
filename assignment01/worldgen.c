@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include <stdint.h>
+#include "tiles.h"
 
 #define GRID_HEIGHT 24
 #define GRID_WIDTH 80
 
-static int8_t gridMatrix[GRID_HEIGHT][GRID_WIDTH];
+static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
 
 void init_world() 
 {
@@ -13,7 +13,6 @@ void init_world()
 
 int main(int argc, char* argv[])
 {
-
 	init_world();
 
     for(int i=0; i < GRID_HEIGHT - 3; i++) {
