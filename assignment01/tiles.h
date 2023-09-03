@@ -23,9 +23,7 @@ struct tile_s
    const float adjacency[TileCount];
 };
 
-
-
-static struct tile_s treeTile = 
+struct tile_s treeTile = 
 {
    .name = "tree",
    .ascii = '^',
@@ -33,7 +31,7 @@ static struct tile_s treeTile =
    .adjacency = {0.f},
 };
 
-static struct tile_s mountainTile = 
+struct tile_s mountainTile = 
 {
    .name = "mountain",
    .ascii = '%',
@@ -41,7 +39,7 @@ static struct tile_s mountainTile =
    .adjacency = {0.f},
 };
 
-static struct tile_s tallGrass = 
+struct tile_s tallGrass = 
 {
    .name = "tall-grass",
    .ascii = ':',
@@ -49,7 +47,7 @@ static struct tile_s tallGrass =
    .adjacency = {0.f},
 };
 
-static struct tile_s clearing = 
+struct tile_s clearing = 
 {
    .name = "clearing",
    .ascii = '.',
@@ -57,9 +55,13 @@ static struct tile_s clearing =
    .adjacency = {0.f},
 };
 
-// static struct tile_s tiles[TileCount] = 
-// {
-   
-// };  TODO: needed?
+// important to keep in the order you defined in the enum
+struct tile_s* tiles[TileCount] =
+{
+   &treeTile,
+   &mountainTile,
+   &tallGrass,
+   &clearing,
+};
 
 #endif /* _TILES_H */
