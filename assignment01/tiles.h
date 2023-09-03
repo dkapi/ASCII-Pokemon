@@ -12,6 +12,7 @@ enum tile_e
    MountainTile,
    TallGrass,
    Clearing,
+   Path,
    TileCount,
 };
 
@@ -55,6 +56,14 @@ struct tile_s clearing =
    .adjacency = {0.f},
 };
 
+struct tile_s path =
+{
+    .name = "path",
+    .ascii = '#',
+    .tile_idx = Path,
+    .adjacency = {0.f},
+};
+
 // important to keep in the order you defined in the enum
 struct tile_s* tiles[TileCount] =
 {
@@ -62,6 +71,9 @@ struct tile_s* tiles[TileCount] =
    &mountainTile,
    &tallGrass,
    &clearing,
+   &path,
+   
 };
+
 
 #endif /* _TILES_H */
