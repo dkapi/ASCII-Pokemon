@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <unistd.h>
-#include "tiles.h"
+#include "common.h"
+#include "wave-function-collapse.h"
 
-#define GRID_HEIGHT 24 - 3
-#define GRID_WIDTH 80
 
 static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
 
+
+// TODO: remove after wfc?
 void init_world() 
 {
 	
