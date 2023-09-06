@@ -3,13 +3,21 @@
 #include <time.h>
 #include <stdlib.h>
 #include "tiles.h"
+#include <math.h>
 
 
 #define GRID_HEIGHT 24-3
 #define GRID_WIDTH 80
+#define SEED_NUM 12
 
 static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
-int seed_points[8][2];
+
+typedef struct Seed{
+    int x;
+    int y;
+    char tile;
+} Seed;
+
 
 void init_world() 
 {
@@ -28,44 +36,81 @@ void init_world()
 	   gridMatrix[i][j] =  clearing.ascii;
        }
    }
-   
-   
 }
 
 void printGrid()
 {
-   //	printf("\x1b[H");
-	for(int i=0; i < GRID_HEIGHT; i++) {
-		for(int j=0; j < GRID_WIDTH; j++) {
-		    //	putchar(gridMatrix[i][j]);
-		    if(gridMatrix[i][j] == '%'){
-			printf(MAG "%c", gridMatrix[i][j]);
-		    }
-		    if(gridMatrix[i][j] == '.'){
-			printf(YEL "%c", gridMatrix[i][j]);
-		    }
-		}
-		putchar('\n');
-	}	       
+    //	printf("\x1b[H");
+    for(int i=0; i < GRID_HEIGHT; i++) {
+	for(int j=0; j < GRID_WIDTH; j++) {
+	   	putchar(gridMatrix[i][j]);
+//	    if(gridMatrix[i][j] == '%'){
+//		printf(MAG "%c", gridMatrix[i][j]);
+//	    }
+//	    if(gridMatrix[i][j] == '.'){
+//		printf(YEL "%c", gridMatrix[i][j]);
+//	    }
+	}
+	putchar('\n');
+    }	       
 }
 
 
-void gen_seeds()
+void gen_seeds(Seed storedSeeds[SEED_NUM])
 {
-    int minX = 1; int maxX = 79; int minY = 1; int maxY = 20;
-    
-    for(int i =0; i < 4; i++){
-	seed_points[i][0] = rand() % (maxX - minX + 1) + minX;
-	seed_points[i][1] = rand() % (maxY - minY + 1) + minY;
+
+    for(int i =0; i < SEED_NUM; i++){
+	storedSeeds[i].x = (rand() % GRID_WIDTH-1)+1;
+	storedSeeds[i].y = (rand() % GRID_HEIGHT-1)+1;
     }
+    storedSeeds[0].tile = mountainTile.ascii;
+    storedSeeds[1].tile = treeTile.ascii;
+    storedSeeds[2].tile = clearing.ascii;
+    storedSeeds[3].tile = tallGrass.ascii;
+    storedSeeds[4].tile = water.ascii;
+    storedSeeds[5].tile = tallGrass.ascii;
+    storedSeeds[6].tile = water.ascii;
+    storedSeeds[7].tile = treeTile.ascii;
+    storedSeeds[8].tile = mountainTile.ascii;
+    storedSeeds[9].tile = clearing.ascii;
+    storedSeeds[10].tile = treeTile.ascii;
+    storedSeeds[11].tile = clearing.ascii;
 }
 
-int main(int argc, char* argv[])
+double distance(int x, int y, int x2, int y2)
 {
-    srand(time(NULL));
+    return sqrt(pow(x - x2, 2) + pow(y -y2, 2));
+}
 
-    gen_seeds();
+void voronoi_world_gen(char gridMatrix[GRID_HEIGHT][GRID_WIDTH], Seed storedSeeds[SEED_NUM])
+{
+    for (int x =1; x < GRID_HEIGHT -1; x++){
+        for ( int y =1; y < GRID_WIDTH -1; y++){
+            int closestSeed = 0;
+            double closestDistance = distance(x , y, storedSeeds[0].x,
+					      storedSeeds[0].y);
+
+            for(int i =1; i < SEED_NUM; i++){
+                double d = distance(x , y, storedSeeds[i].x,
+				    storedSeeds[i].y);
+                if(d < closestDistance){
+                    closestSeed = i;
+                    closestDistance = d;
+                }
+            }
+            gridMatrix[x][y] = storedSeeds[closestSeed].tile;
+        }
+     }
+}
+
+int main(void)
+{
+    srand(time(NULL));    
+    Seed seeds[SEED_NUM];
+
+    gen_seeds(seeds);
     init_world();
+    voronoi_world_gen(gridMatrix, seeds);
     printGrid();
     
 //    printf("\x1b[2J"); 
