@@ -5,14 +5,6 @@
 #ifndef _TILES_H
 #define _TILES_H
 
-#define BLK "\e[0;30m"
-#define RED "\e[0;31m"
-#define GRN "\e[0;32m"
-#define YEL "\e[0;33m"
-#define BLU "\e[0;34m"
-#define MAG "\e[0;35m"
-#define CYN "\e[0;36m"
-#define WHT "\e[0;37m"
 
 // TODO: optimize size?
 enum tile_e 
@@ -21,7 +13,7 @@ enum tile_e
    MountainTile,
    TallGrass,
    Clearing,
-   Path,
+   // Path,
    Water,
    TileCount,
 };
@@ -70,7 +62,7 @@ struct tile_s path =
 {
     .name = "path",
     .ascii = '#',
-    .tile_idx = Path,
+    // .tile_idx = Path,
     .adjacency = {0.f},
 };
 
@@ -90,7 +82,7 @@ struct tile_s* tiles[TileCount] =
    &mountainTile,
    &tallGrass,
    &clearing,
-   &path,
+   // &path,
    &water,
    
 };
