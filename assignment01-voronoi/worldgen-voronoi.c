@@ -8,7 +8,7 @@
 
 #define GRID_HEIGHT 24-3
 #define GRID_WIDTH 80
-#define SEED_NUM 12
+#define SEED_NUM 10
 
 static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
 
@@ -43,13 +43,22 @@ void printGrid()
     //	printf("\x1b[H");
     for(int i=0; i < GRID_HEIGHT; i++) {
 	for(int j=0; j < GRID_WIDTH; j++) {
-	   	putchar(gridMatrix[i][j]);
-//	    if(gridMatrix[i][j] == '%'){
-//		printf(MAG "%c", gridMatrix[i][j]);
-//	    }
-//	    if(gridMatrix[i][j] == '.'){
-//		printf(YEL "%c", gridMatrix[i][j]);
-//	    }
+	  // 	putchar(gridMatrix[i][j]);
+	    if(gridMatrix[i][j] == '%'){
+		printf(MAG "%c", gridMatrix[i][j]);
+	    }
+	    if(gridMatrix[i][j] == '.'){
+		printf(YEL "%c", gridMatrix[i][j]);
+	    }
+        if(gridMatrix[i][j] == '~'){
+            printf(BLU "%c", gridMatrix[i][j]);
+        }
+        if(gridMatrix[i][j] == '^'){
+            printf(GRN "%c", gridMatrix[i][j]);
+        }
+        if(gridMatrix[i][j] == ':'){
+            printf(GRN "%c", gridMatrix[i][j]);
+        }
 	}
 	putchar('\n');
     }	       
@@ -73,8 +82,6 @@ void gen_seeds(Seed storedSeeds[SEED_NUM])
     storedSeeds[7].tile = treeTile.ascii;
     storedSeeds[8].tile = mountainTile.ascii;
     storedSeeds[9].tile = clearing.ascii;
-    storedSeeds[10].tile = treeTile.ascii;
-    storedSeeds[11].tile = clearing.ascii;
 }
 
 double distance(int x, int y, int x2, int y2)
