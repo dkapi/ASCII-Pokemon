@@ -8,7 +8,7 @@
 
 #define GRID_HEIGHT 24-3
 #define GRID_WIDTH 80
-#define SEED_NUM 10
+#define SEED_NUM 20
 
 static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
 
@@ -82,6 +82,16 @@ void gen_seeds(Seed storedSeeds[SEED_NUM])
     storedSeeds[7].tile = treeTile.ascii;
     storedSeeds[8].tile = mountainTile.ascii;
     storedSeeds[9].tile = clearing.ascii;
+    storedSeeds[10].tile = mountainTile.ascii;
+    storedSeeds[11].tile = treeTile.ascii;
+    storedSeeds[12].tile = clearing.ascii;
+    storedSeeds[13].tile = tallGrass.ascii;
+    storedSeeds[14].tile = water.ascii;
+    storedSeeds[15].tile = tallGrass.ascii;
+    storedSeeds[16].tile = water.ascii;
+    storedSeeds[17].tile = treeTile.ascii;
+    storedSeeds[18].tile = mountainTile.ascii;
+    storedSeeds[19].tile = clearing.ascii;
 }
 
 double distance(int x, int y, int x2, int y2)
