@@ -23,17 +23,22 @@ void initWorld()
 {
     for(int i=0; i < GRID_HEIGHT; i++) {
        	gridMatrix[i][0] = mountainTile.ascii;
-	    gridMatrix[i][GRID_WIDTH-1] =  mountainTile.ascii;
+	gridMatrix[i][GRID_WIDTH-1] =  mountainTile.ascii;
     }
-
+    //maybe better way to impliment this but oh well
+    gridMatrix[1 + (rand() % (GRID_HEIGHT-1))][0] = path.ascii;
+    gridMatrix[1 + (rand() % (GRID_HEIGHT-1))][GRID_WIDTH-1] = path.ascii;
+    
     for(int j=0; j < GRID_WIDTH; j++) {
        gridMatrix[0][j] = mountainTile.ascii;
        gridMatrix[GRID_HEIGHT-1][j] =  mountainTile.ascii;
     }
+    gridMatrix[0][1 +(rand() % (GRID_WIDTH -1))] = path.ascii;
+    gridMatrix[GRID_HEIGHT-1][1 + (rand() % (GRID_WIDTH -1))] = path.ascii;
 
    for(int i=1; i < GRID_HEIGHT - 1; i++) {
         for(int j=1; j < GRID_WIDTH - 1; j++) {
-	        gridMatrix[i][j] =  clearing.ascii;
+	    gridMatrix[i][j] =  clearing.ascii;
         }
    }
 }
@@ -46,6 +51,7 @@ void initWorld()
 #define MAG "\e[0;35m"
 #define CYN "\e[0;36m"
 #define WHT "\e[0;37m"
+#define BRN "\e[38;5;166m"
 
 void printGrid()
 {
@@ -68,6 +74,9 @@ void printGrid()
                 case ':':
                     color = GRN;
                     break;
+	        case '#':
+		    color = BRN;
+		    break;
                 default:
                     // unreachable 
                     fprintf(stderr, "unhandled color case\n");
