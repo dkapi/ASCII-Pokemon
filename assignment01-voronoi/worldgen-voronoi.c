@@ -11,6 +11,7 @@
 #define SEED_NUM 20
 
 static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
+static int leftX, leftY, topX, topY, botX, botY, rightX, rightY;
 
 typedef struct Seed {
     unsigned int x;
@@ -19,22 +20,32 @@ typedef struct Seed {
 } Seed;
 
 
-void initWorld() 
-{
+void init_world() 
+{   
     for(int i=0; i < GRID_HEIGHT; i++) {
        	gridMatrix[i][0] = mountainTile.ascii;
-	gridMatrix[i][GRID_WIDTH-1] =  mountainTile.ascii;
+	    gridMatrix[i][GRID_WIDTH-1] =  mountainTile.ascii;
     }
-    //maybe better way to impliment this but oh well
-    gridMatrix[1 + (rand() % (GRID_HEIGHT-1))][0] = path.ascii;
-    gridMatrix[1 + (rand() % (GRID_HEIGHT-1))][GRID_WIDTH-1] = path.ascii;
+    // TODO maybe better way to impliment this but oh well/ or move to its own func
+    topX = 1 + (rand() % (GRID_HEIGHT-1));
+    topY = 0;
+    gridMatrix[topX][topY] = path.ascii;
+    botX = 1 + (rand() % (GRID_HEIGHT-1));
+    botY = GRID_WIDTH - 1;
+    gridMatrix[botX][botY] = path.ascii;
     
     for(int j=0; j < GRID_WIDTH; j++) {
        gridMatrix[0][j] = mountainTile.ascii;
        gridMatrix[GRID_HEIGHT-1][j] =  mountainTile.ascii;
     }
-    gridMatrix[0][1 +(rand() % (GRID_WIDTH -1))] = path.ascii;
-    gridMatrix[GRID_HEIGHT-1][1 + (rand() % (GRID_WIDTH -1))] = path.ascii;
+
+    leftX = 0;
+    leftY = 1 +(rand() % (GRID_WIDTH -1));
+    gridMatrix[leftX][leftY] = path.ascii;
+    rightX = GRID_HEIGHT -1;
+    rightY = 1 + (rand() % (GRID_WIDTH -1));
+    gridMatrix[rightX][rightY] = path.ascii;
+
 
    for(int i=1; i < GRID_HEIGHT - 1; i++) {
         for(int j=1; j < GRID_WIDTH - 1; j++) {
@@ -53,7 +64,7 @@ void initWorld()
 #define WHT "\e[0;37m"
 #define BRN "\e[38;5;166m"
 
-void printGrid()
+void print_grid()
 {
     for(int i=0; i < GRID_HEIGHT; i++) {
         for(int j=0; j < GRID_WIDTH; j++) {
@@ -139,15 +150,75 @@ void voronoi_world_gen(char gridMatrix[GRID_HEIGHT][GRID_WIDTH], Seed storedSeed
      }
 }
 
+void generate_path(char grid[GRID_HEIGHT][GRID_WIDTH], int leftGateX, int leftGateY, int rightGateX, int rightGateY,
+                    int topGateX, int topGateY, int botGateX, int botGateY) 
+{   // x is y, y should be x
+    int x = leftGateX;
+    int y = leftGateY;
+    int j = botGateX;
+    int k = botGateY;
+
+    while (y <= topGateY) {
+        grid[x][y] = path.ascii;
+        y++;
+    } y--;
+
+    if( x <= rightGateX){
+        while (x <=rightGateX){
+            grid[x][y] = path.ascii;
+            x++;
+        } x--;
+
+    } else if (x >= rightGateX){
+        while (x >= rightGateX)
+        {
+            grid[x][y] = path.ascii;
+            x--;
+        } x++;
+    }
+
+    while (y <= rightGateY){
+        grid[x][y] = path.ascii;
+        y++;
+    }
+
+    // down here is bot to top path looping
+    while(j>= rightGateX){
+        grid[j][k] = path.ascii;
+        j--;
+    } j++;
+
+    if( k <= topGateY){
+        while(k <= topGateY){
+            grid[j][k] = path.ascii;
+            k++;
+        } k--;
+    } else if (k >= topGateY){
+        while (k >= topGateY)
+        {
+            grid[j][k] = path.ascii;
+            k--;
+        }k++;
+    }
+    while(j >= topGateX){
+        grid[j][k] = path.ascii;
+        j--;
+    }
+}
+
+
 int main(void)
 {
     srand(time(NULL));    
     Seed seeds[SEED_NUM];
 
     gen_voronoi_seeds(seeds);
-    initWorld();
+    init_world();
     voronoi_world_gen(gridMatrix, seeds);
-    printGrid();
+
+    // okay so my grid is like inversed so top is left, bot is right...etc :)
+    generate_path(gridMatrix, topX, topY, botX, botY, leftX, leftY, rightX, rightY);
+    print_grid();
     
     return 0;
 }
