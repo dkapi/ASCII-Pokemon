@@ -180,7 +180,6 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         botY += direction;
     }
     // bottom gate: go rest of the way up to top gate
-    // left gate: go rest of way in horizontal to right gate
     while(botX != 0) {
         gridMatrix[botX][botY] = pathTile.ascii;
         botX--;
