@@ -166,11 +166,19 @@ void voronoi_world_gen(Seed storedSeeds[SEED_NUM])
 void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rightY, int topX, int topY)
 {
 
-    int randB = rand() % 3 + 1;
-    int randCM = rand() % 2 + 1;
-
+    
     int direction;
 
+    // pick one of the 3 "runs" for placing a pokemart
+    int PCplacement = 1 + rand() % 3;
+    int PCx = 0, PCy = 0;
+    // place pokemon center on left run to bottom gate
+    if (PCplacement == 1) {
+        PCx = leftX - 1; // TODO: fixme
+        PCy = leftY + (rand() % (botY - leftY - 1));
+        printf("placement%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
+    }
+    
     // left gate: go right until bottom gate
     while (leftY < botY)
     {
@@ -178,67 +186,35 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         leftY++;
     }
 
-    // spawning a pokemon center
-    if (randB == 1)
-    {
-        int randDist = rand() % botY + 1;
-        if (leftX - 1 != 0 && randCM == 1)
-        {
-            gridMatrix[leftX - 1][randDist] = pokemonCenter.ascii;
+    // place pokemon center on virtical run to right gate
+    if (PCplacement == 2) {
+        if((leftX-rightX) == 0) {
+            PCx = leftX;
         }
-        else
-        {
-            if (leftX + 1 != 21 && randCM == 1)
-            {
-                gridMatrix[leftX + 1][randDist] = pokemonCenter.ascii;
-            }
+        else if( (leftX-rightX) < 0 ) {
+            PCx = leftX + (rand() % (rightX-leftX));
+        } 
+        else {
+            PCx = rightX + (rand() % (leftX-rightX));
         }
-    }
-    else
-    {
-        if (randB == 2)
-        {
-            int randDist = rand() % leftY + 1;
-            if (leftY + 1 != 0 && randCM == 1)
-            {
-                gridMatrix[randDist][leftY] = pokemonCenter.ascii;
-            }
-            else
-            {
-                if (leftY - 1 != 79 && randCM == 1)
-                {
-                    gridMatrix[randDist][leftY] = pokemonCenter.ascii;
-                }
-            }
-        }
-
-        else
-        {
-            if (randB == 3)
-            {
-                int randDist = rand() % leftX + 1;
-                if (leftY + 1 > leftX && randCM == 1)
-                {
-                    gridMatrix[randDist][leftX + 1] = pokemonCenter.ascii;
-                }
-                else
-                {
-                    if (leftY - 1 != 79 && randCM == 1)
-                    {
-                        gridMatrix[randDist][leftX - 1] = pokemonCenter.ascii;
-                    }
-                }
-            }
-        }
+        PCy = leftY - 1;
+        printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
 
-    // left gate: go in virtical direction of right gate
     direction = leftX > rightX ? -1 : 1;
+    // left gate: go in virtical direction of right gate
     while (leftX != rightX)
     {
         gridMatrix[leftX][leftY] = pathTile.ascii;
         leftX += direction;
     }
+    // place pokemon center on last run to right gate
+    if(PCplacement == 3) {
+        PCx = leftX - 1; // TODO: fixme
+        PCy = leftY + (rand() % (rightY - leftY + 1));
+        printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
+    }
+
     // left gate: go rest of way in horizontal to right gate
     while (leftY != GRID_WIDTH)
     {
@@ -265,6 +241,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         gridMatrix[botX][botY] = pathTile.ascii;
         botX--;
     }
+    gridMatrix[PCx][PCy] = pokemonCenter.ascii;
 }
 
 int main(void)
