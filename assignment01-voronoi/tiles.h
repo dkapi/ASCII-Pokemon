@@ -1,5 +1,5 @@
 /*
-   Tile Definitions for wave fuction collapse algorithm
+   Tile Definitions
 */
 
 #ifndef _TILES_H
@@ -73,6 +73,15 @@ struct tile_s waterTile =
     .tile_idx = Water,
     .adjacency = {0.f},
 };
+
+struct tile_s pokemonCenter = 
+{
+ .name = "center",
+ .ascii = 'C',
+ //.tile_idx = Center,
+ .adjacency = {0.f},
+};
+
 
 
 // important to keep in the order you defined in the enum
