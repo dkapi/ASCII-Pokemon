@@ -11,7 +11,7 @@
 #define SEED_NUM 20
 
 static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
-static int leftX, leftY, topX, topY, botX, botY, rightX, rightY;
+static int gates[4*2];  // (4 x,y pairs for gates) 
 
 typedef struct Seed {
     unsigned int x;
@@ -27,31 +27,27 @@ void init_world()
 	    gridMatrix[i][GRID_WIDTH-1] =  mountainTile.ascii;
     }
     // TODO maybe better way to impliment this but oh well/ or move to its own func
-    topX = 1 + (rand() % (GRID_HEIGHT-1));
-    topY = 0;
-    gridMatrix[topX][topY] = path.ascii;
-    botX = 1 + (rand() % (GRID_HEIGHT-1));
-    botY = GRID_WIDTH - 1;
-    gridMatrix[botX][botY] = path.ascii;
+    
     
     for(int j=0; j < GRID_WIDTH; j++) {
        gridMatrix[0][j] = mountainTile.ascii;
        gridMatrix[GRID_HEIGHT-1][j] =  mountainTile.ascii;
     }
 
-    leftX = 0;
-    leftY = 1 +(rand() % (GRID_WIDTH -1));
-    gridMatrix[leftX][leftY] = path.ascii;
-    rightX = GRID_HEIGHT -1;
-    rightY = 1 + (rand() % (GRID_WIDTH -1));
-    gridMatrix[rightX][rightY] = path.ascii;
-
-
-   for(int i=1; i < GRID_HEIGHT - 1; i++) {
+    for(int i=1; i < GRID_HEIGHT - 1; i++) {
         for(int j=1; j < GRID_WIDTH - 1; j++) {
-	    gridMatrix[i][j] =  clearing.ascii;
+	    gridMatrix[i][j] =  clearingTile.ascii;
         }
-   }
+    }
+
+    // these may seem "backwards" but x gives us row and y gives entry in that row
+    gates[0] = 1 + (rand() % (GRID_HEIGHT-2)); gates[1] = 0;               // left gate
+    gates[2] = GRID_HEIGHT - 1; gates[3] = 1 + (rand() % (GRID_WIDTH-2));  // bottom gate
+    gates[4] = 1 + (rand() % (GRID_HEIGHT-2)); gates[5] = GRID_WIDTH - 1;  // right gate
+    gates[6] = 0; gates[7] = 1 + (rand() % (GRID_WIDTH-2));                // top gate
+    for(int i=0; i < 8; i+=2) {
+        gridMatrix[gates[i]][gates[i+1]] = pathTile.ascii;
+    }
 }
 
 #define BLK "\e[0;30m"
@@ -85,9 +81,9 @@ void print_grid()
                 case ':':
                     color = GRN;
                     break;
-	        case '#':
-		    color = BRN;
-		    break;
+                case '#':
+                    color = BRN;
+                    break;
                 default:
                     // unreachable 
                     fprintf(stderr, "unhandled color case\n");
@@ -115,7 +111,7 @@ static inline double distance(int x, int y, int x2, int y2)
     return sqrt( (x-x2) * (x-x2) + (y-y2) * (y-y2));
 }
 
-void voronoi_world_gen(char gridMatrix[GRID_HEIGHT][GRID_WIDTH], Seed storedSeeds[SEED_NUM])
+void voronoi_world_gen(Seed storedSeeds[SEED_NUM])
 {   
     // start at one because of border
     for (int x =1; x < GRID_HEIGHT - 1 ; x++){
@@ -140,7 +136,7 @@ void voronoi_world_gen(char gridMatrix[GRID_HEIGHT][GRID_WIDTH], Seed storedSeed
                 //     gridMatrix[x][y] = tallGrass.ascii;
                 // }
                 else {
-                    gridMatrix[x][y] = clearing.ascii;
+                    gridMatrix[x][y] = clearingTile.ascii;
                 }
             }
             else {
@@ -150,59 +146,44 @@ void voronoi_world_gen(char gridMatrix[GRID_HEIGHT][GRID_WIDTH], Seed storedSeed
      }
 }
 
-void generate_path(char grid[GRID_HEIGHT][GRID_WIDTH], int leftGateX, int leftGateY, int rightGateX, int rightGateY,
-                    int topGateX, int topGateY, int botGateX, int botGateY) 
-{   // x is y, y should be x
-    int x = leftGateX;
-    int y = leftGateY;
-    int j = botGateX;
-    int k = botGateY;
+void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rightY, int topX, int topY) 
+{
+    
+    int direction;
 
-    while (y <= topGateY) {
-        grid[x][y] = path.ascii;
-        y++;
-    } y--;
-
-    if( x <= rightGateX){
-        while (x <=rightGateX){
-            grid[x][y] = path.ascii;
-            x++;
-        } x--;
-
-    } else if (x >= rightGateX){
-        while (x >= rightGateX)
-        {
-            grid[x][y] = path.ascii;
-            x--;
-        } x++;
+    // left gate: go right until bottom gate
+    while(leftY < botY) {
+        gridMatrix[leftX][leftY] = pathTile.ascii;
+        leftY++;
+    }
+    // left gate: go in virtical direction of right gate
+    direction = leftX > rightX ? -1 : 1;
+    while(leftX != rightX) {
+        gridMatrix[leftX][leftY] = pathTile.ascii;
+        leftX += direction;
+    }
+    // left gate: go rest of way in horizontal to right gate
+    while(leftY != GRID_WIDTH) {
+        gridMatrix[leftX][leftY] = pathTile.ascii;
+        leftY++;
     }
 
-    while (y <= rightGateY){
-        grid[x][y] = path.ascii;
-        y++;
+    // bottom gate: go up until right gate (leftX has been changed)
+    while(botX > leftX) {
+        gridMatrix[botX][botY] = pathTile.ascii;
+        botX--;
     }
-
-    // down here is bot to top path looping
-    while(j>= rightGateX){
-        grid[j][k] = path.ascii;
-        j--;
-    } j++;
-
-    if( k <= topGateY){
-        while(k <= topGateY){
-            grid[j][k] = path.ascii;
-            k++;
-        } k--;
-    } else if (k >= topGateY){
-        while (k >= topGateY)
-        {
-            grid[j][k] = path.ascii;
-            k--;
-        }k++;
+    // bottom gate: go in horizontal direction of top gate
+    direction = botY > topY ? -1 : 1;
+    while(botY != topY) {
+        gridMatrix[botX][botY] = pathTile.ascii;
+        botY += direction;
     }
-    while(j >= topGateX){
-        grid[j][k] = path.ascii;
-        j--;
+    // bottom gate: go rest of the way up to top gate
+    // left gate: go rest of way in horizontal to right gate
+    while(botX != 0) {
+        gridMatrix[botX][botY] = pathTile.ascii;
+        botX--;
     }
 }
 
@@ -214,10 +195,10 @@ int main(void)
 
     gen_voronoi_seeds(seeds);
     init_world();
-    voronoi_world_gen(gridMatrix, seeds);
+    voronoi_world_gen(seeds);
 
     // okay so my grid is like inversed so top is left, bot is right...etc :)
-    generate_path(gridMatrix, topX, topY, botX, botY, leftX, leftY, rightX, rightY);
+    generate_path(gates[0], gates[1], gates[2], gates[3], gates[4], gates[5], gates[6], gates[7]);
     print_grid();
     
     return 0;

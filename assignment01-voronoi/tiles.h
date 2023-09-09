@@ -42,7 +42,7 @@ struct tile_s mountainTile =
    .adjacency = {0.f},
 };
 
-struct tile_s tallGrass = 
+struct tile_s tallGrassTile = 
 {
    .name = "tall-grass",
    .ascii = ':',
@@ -50,7 +50,7 @@ struct tile_s tallGrass =
    .adjacency = {0.f},
 };
 
-struct tile_s clearing = 
+struct tile_s clearingTile = 
 {
    .name = "clearing",
    .ascii = '.',
@@ -58,7 +58,7 @@ struct tile_s clearing =
    .adjacency = {0.f},
 };
 
-struct tile_s path =
+struct tile_s pathTile =
 {
     .name = "path",
     .ascii = '#',
@@ -66,7 +66,7 @@ struct tile_s path =
     .adjacency = {0.f},
 };
 
-struct tile_s water =
+struct tile_s waterTile =
 {
     .name = "water",
     .ascii = '~',
@@ -80,10 +80,10 @@ struct tile_s* tiles[TileCount] =
 {
    &treeTile,
    &mountainTile,
-   &tallGrass,
-   &clearing,
+   &tallGrassTile,
+   &clearingTile,
    // &path,
-   &water,
+   &waterTile,
    
 };
 
