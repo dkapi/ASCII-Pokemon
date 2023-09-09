@@ -142,7 +142,7 @@ void voronoi_world_gen(Seed storedSeeds[SEED_NUM])
                 }
             }
             // TODO: this is not desired way to do this but it works
-            // do something similar to printing the colors
+            // prolly write a switch statement instead
             if (storedSeeds[closestSeed].tile == treeTile.ascii)
             {
                 int treeChance = rand() % 100;
@@ -208,6 +208,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         gridMatrix[leftX][leftY] = pathTile.ascii;
         leftX += direction;
     }
+    
     // place pokemon center on last run to right gate
     if(PCplacement == 3) {
         PCx = leftX - 1; // TODO: fixme
