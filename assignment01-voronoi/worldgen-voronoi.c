@@ -127,14 +127,11 @@ void voronoi_world_gen(Seed storedSeeds[SEED_NUM])
             }
             // TODO: this is not desired way to do this but it works
             // do something similar to printing the colors
-            if(storedSeeds[closestSeed].tile == '^') {
+            if(storedSeeds[closestSeed].tile == treeTile.ascii) {
                 int treeChance = rand() % 100;
                 if (treeChance < 25) {
                     gridMatrix[x][y] = treeTile.ascii;
                 }
-                // else if(25 < treeChance && treeChance < 50) {
-                //     gridMatrix[x][y] = tallGrass.ascii;
-                // }
                 else {
                     gridMatrix[x][y] = clearingTile.ascii;
                 }
