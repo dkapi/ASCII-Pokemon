@@ -142,7 +142,7 @@ void voronoi_world_gen(Seed storedSeeds[SEED_NUM])
                 }
             }
             // TODO: this is not desired way to do this but it works
-            // do something similar to printing the colors
+            // prolly write a switch statement instead
             if (storedSeeds[closestSeed].tile == treeTile.ascii)
             {
                 int treeChance = rand() % 100;
@@ -179,6 +179,8 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     }
 
     // spawning a pokemon center
+    // idea here is to just have conditionals based on randB value
+    // this first one prints a C nicely 
     if (randB == 1)
     {
         int randDist = rand() % botY + 1;
@@ -194,43 +196,19 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
             }
         }
     }
-    else
-    {
-        if (randB == 2)
+    // dis shit no work
+    else if( randB == 2){
+        int randDist = rand() % rightX +1;
+        if(rightY + 1 != 79 && randCM == 1)
         {
-            int randDist = rand() % leftY + 1;
-            if (leftY + 1 != 0 && randCM == 1)
-            {
-                gridMatrix[randDist][leftY] = pokemonCenter.ascii;
-            }
-            else
-            {
-                if (leftY - 1 != 79 && randCM == 1)
-                {
-                    gridMatrix[randDist][leftY] = pokemonCenter.ascii;
-                }
-            }
+            gridMatrix[randDist][rightY] = pokemonCenter.ascii;
         }
-
-        else
-        {
-            if (randB == 3)
-            {
-                int randDist = rand() % leftX + 1;
-                if (leftY + 1 > leftX && randCM == 1)
-                {
-                    gridMatrix[randDist][leftX + 1] = pokemonCenter.ascii;
-                }
-                else
-                {
-                    if (leftY - 1 != 79 && randCM == 1)
-                    {
-                        gridMatrix[randDist][leftX - 1] = pokemonCenter.ascii;
-                    }
-                }
-            }
+        else if(rightY-1 != 1 && randCM == 1){
+            gridMatrix[randDist][rightY] = pokemonCenter.ascii;
         }
     }
+
+    
 
     // left gate: go in virtical direction of right gate
     direction = leftX > rightX ? -1 : 1;
