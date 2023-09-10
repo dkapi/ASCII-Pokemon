@@ -82,6 +82,12 @@ struct tile_s pokemonCenter =
  .adjacency = {0.f},
 };
 
+struct tile_s pokeMart = 
+{
+   .name = "mart",
+   .ascii = 'M',
+   .adjacency = {0.f},
+};
 
 
 // important to keep in the order you defined in the enum

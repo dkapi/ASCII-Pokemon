@@ -96,6 +96,9 @@ void print_grid()
             case 'C':
                 color = RED;
                 break;
+            case 'M':
+                color = BLU;
+                break;
             default:
                 // unreachable
                 fprintf(stderr, "unhandled color case\n");
@@ -172,11 +175,26 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // pick one of the 3 "runs" for placing a pokemart
     int PCplacement = 1 + rand() % 3;
     int PCx = 0, PCy = 0;
+    int Mplacement = 1 + rand() %3;
+    int Mx = 0, My = 0;
     // place pokemon center on left run to bottom gate
     if (PCplacement == 1) {
+        if(leftX -1 != 0){
         PCx = leftX - 1; // TODO: fixme
+        } else if (leftX +1 != 21){
+            PCx = leftX +1;
+        }
         PCy = leftY + (rand() % (botY - leftY - 1));
         printf("placement%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
+    }
+    //pokemart placement if 1
+    if(Mplacement == 1){
+        if( leftX - 1 != 0){
+            Mx = leftX -1;
+        } else if (leftX+1 != 21){
+            Mx = leftX +1;
+        }
+        Mx = leftY + (rand() % (botY - leftY -1));
     }
     
     // left gate: go right until bottom gate
@@ -200,6 +218,19 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         PCy = leftY - 1;
         printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
+    // place mart if 2
+    if(Mplacement == 2) {
+        if((leftX - rightX) == 0){
+            Mx = leftX;
+        }
+        else if ((leftX-rightX) < 0 ) {
+            Mx = leftX + (rand() % (rightX - leftX));
+        }
+        else {
+            Mx = rightX + (rand() % (leftX-rightX));
+        }
+        My = leftY -1;
+    }
 
     direction = leftX > rightX ? -1 : 1;
     // left gate: go in virtical direction of right gate
@@ -214,6 +245,11 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         PCx = leftX - 1; // TODO: fixme
         PCy = leftY + (rand() % (rightY - leftY + 1));
         printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
+    }
+
+    if(Mplacement == 3) {
+        Mx = leftX -1;
+        My = leftY + (rand() % (rightY - leftY +1));
     }
 
     // left gate: go rest of way in horizontal to right gate
@@ -243,6 +279,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         botX--;
     }
     gridMatrix[PCx][PCy] = pokemonCenter.ascii;
+    gridMatrix[Mx][My] = pokeMart.ascii;
 }
 
 int main(void)
