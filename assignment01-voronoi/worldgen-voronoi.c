@@ -65,6 +65,7 @@ void init_world()
 #define CYN "\e[0;36m"
 #define WHT "\e[0;37m"
 #define BRN "\e[38;5;94m"
+#define LBL "\e[38;5;33m"
 
 void print_grid()
 {
@@ -97,7 +98,7 @@ void print_grid()
                 color = RED;
                 break;
             case 'M':
-                color = BLU;
+                color = LBL;
                 break;
             default:
                 // unreachable
@@ -187,15 +188,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         PCy = leftY + (rand() % (botY - leftY - 1));
         printf("placement%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
-    //pokemart placement if 1
-    if(Mplacement == 1){
-        if( leftX - 1 != 0){
-            Mx = leftX -1;
-        } else if (leftX+1 != 21){
-            Mx = leftX +1;
-        }
-        Mx = leftY + (rand() % (botY - leftY -1));
-    }
+   
     
     // left gate: go right until bottom gate
     while (leftY < botY)
@@ -218,19 +211,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         PCy = leftY - 1;
         printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
-    // place mart if 2
-    if(Mplacement == 2) {
-        if((leftX - rightX) == 0){
-            Mx = leftX;
-        }
-        else if ((leftX-rightX) < 0 ) {
-            Mx = leftX + (rand() % (rightX - leftX));
-        }
-        else {
-            Mx = rightX + (rand() % (leftX-rightX));
-        }
-        My = leftY -1;
-    }
+   
 
     direction = leftX > rightX ? -1 : 1;
     // left gate: go in virtical direction of right gate
@@ -247,10 +228,6 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
 
-    if(Mplacement == 3) {
-        Mx = leftX -1;
-        My = leftY + (rand() % (rightY - leftY +1));
-    }
 
     // left gate: go rest of way in horizontal to right gate
     while (leftY != GRID_WIDTH)
@@ -259,12 +236,37 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         leftY++;
     }
 
+     //pokemart placement if 1
+    if(Mplacement == 1){
+        if( leftY - 1 != 0){
+            My = leftY -1;
+        } else if (leftY+1 != 79){
+            My = leftY +1;
+        }
+        Mx = leftX + (rand() % (botX - leftX -1));
+    }
+
     // bottom gate: go up until right gate (leftX has been changed)
     while (botX > leftX)
     {
         gridMatrix[botX][botY] = pathTile.ascii;
         botX--;
     }
+
+    //  // place mart if 2
+    // if(Mplacement == 2) {
+    //     if((leftX - rightX) == 0){
+    //         Mx = leftX;
+    //     }
+    //     else if ((leftX-rightX) < 0 ) {
+    //         Mx = leftX + (rand() % (rightX - leftX));
+    //     }
+    //     else {
+    //         Mx = rightX + (rand() % (leftX-rightX));
+    //     }
+    //     My = leftY -1;
+    // }
+
     // bottom gate: go in horizontal direction of top gate
     direction = botY > topY ? -1 : 1;
     while (botY != topY)
@@ -278,6 +280,12 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         gridMatrix[botX][botY] = pathTile.ascii;
         botX--;
     }
+
+      if(Mplacement == 3) {
+        Mx = botX -1;
+        My = botY + (rand() % (topY - botY +1));
+    }
+
     gridMatrix[PCx][PCy] = pokemonCenter.ascii;
     gridMatrix[Mx][My] = pokeMart.ascii;
 }
