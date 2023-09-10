@@ -176,8 +176,9 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // pick one of the 3 "runs" for placing a pokemart
     int PCplacement = 1 + rand() % 3;
     int PCx = 0, PCy = 0;
-    int Mplacement = 1 + rand() %3;
+    int Mplacement = 1 + rand() % 3;
     int Mx = 0, My = 0;
+    Mplacement = 3;
     // place pokemon center on left run to bottom gate
     if (PCplacement == 1) {
         if(leftX -1 != 0){
@@ -228,7 +229,6 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
 
-
     // left gate: go rest of way in horizontal to right gate
     while (leftY != GRID_WIDTH)
     {
@@ -236,14 +236,16 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         leftY++;
     }
 
-     //pokemart placement if 1
+    // pokemart first "run" bottom up to right gate height
     if(Mplacement == 1){
-        if( leftY - 1 != 0){
-            My = leftY -1;
-        } else if (leftY+1 != 79){
-            My = leftY +1;
+        // TODO: delete these dogshit if else if
+        if(botY -1 != 0){
+            My = botY - 1; // TODO: fixme
+        } else if (botY +1 != GRID_WIDTH){
+            My = botY +1;
         }
-        Mx = leftX + (rand() % (botX - leftX -1));
+        Mx = leftX + (rand() % (botX - leftX + 1));
+        printf("placement%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
     }
 
     // bottom gate: go up until right gate (leftX has been changed)
@@ -253,19 +255,20 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         botX--;
     }
 
-    //  // place mart if 2
-    // if(Mplacement == 2) {
-    //     if((leftX - rightX) == 0){
-    //         Mx = leftX;
-    //     }
-    //     else if ((leftX-rightX) < 0 ) {
-    //         Mx = leftX + (rand() % (rightX - leftX));
-    //     }
-    //     else {
-    //         Mx = rightX + (rand() % (leftX-rightX));
-    //     }
-    //     My = leftY -1;
-    // }
+    // place mart on horizontal "run" of bot->top path
+    if(Mplacement == 2) {
+        if((botY - topY) == 0) {
+            My = botY;
+        }
+        else if((botY-topY) < 0 ) {
+            My = botY + (rand() % (topY-botY));
+        } 
+        else {
+            My = topY + (rand() % (botY-topY));
+        }
+        Mx = botX + 1;
+        printf("placement:%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
+    }
 
     // bottom gate: go in horizontal direction of top gate
     direction = botY > topY ? -1 : 1;
@@ -274,16 +277,20 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         gridMatrix[botX][botY] = pathTile.ascii;
         botY += direction;
     }
+
+    // place pokemon center on last run to top gate
+    if(Mplacement == 3) {
+        My = botY + 1; // TODO: fixme
+        Mx = topX + (rand() % (botX - topX + 1));
+        printf("placement:%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
+    }
+
+
     // bottom gate: go rest of the way up to top gate
     while (botX != 0)
     {
         gridMatrix[botX][botY] = pathTile.ascii;
         botX--;
-    }
-
-      if(Mplacement == 3) {
-        Mx = botX -1;
-        My = botY + (rand() % (topY - botY +1));
     }
 
     gridMatrix[PCx][PCy] = pokemonCenter.ascii;
