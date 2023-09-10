@@ -178,7 +178,6 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     int PCx = 0, PCy = 0;
     int Mplacement = 1 + rand() % 3;
     int Mx = 0, My = 0;
-    Mplacement = 3;
     // place pokemon center on left run to bottom gate
     if (PCplacement == 1) {
         if(leftX -1 != 0){
@@ -225,7 +224,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // place pokemon center on last run to right gate
     if(PCplacement == 3) {
         PCx = leftX - 1; // TODO: fixme
-        PCy = leftY + (rand() % (rightY - leftY + 1));
+        PCy = 1 + (rand() % (rightY - leftY + 1));
         printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
 
@@ -281,7 +280,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // place pokemon center on last run to top gate
     if(Mplacement == 3) {
         My = botY + 1; // TODO: fixme
-        Mx = topX + (rand() % (botX - topX + 1));
+        Mx = 1 + (rand() % (botX - topX + 1));
         printf("placement:%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
     }
 
