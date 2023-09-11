@@ -224,7 +224,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // place pokemon center on last run to right gate
     if(PCplacement == 3) {
         PCx = leftX - 1; // TODO: fixme
-        PCy = 1 + (rand() % (rightY - leftY + 1));
+        PCy = leftY + (rand() % (rightY - leftY + 1));
         printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
 
