@@ -1,0 +1,8 @@
+80x21 terminal, first fill with tall grass, then fill with mountains?, then 
+gen in locations for water, finally on to we will place roads which will
+simply replace the tiles below that. marts and centers will be next to roads
+or connected to roads.
+
+Sheaffers algorithm picks random positions on the map and adds them to a 
+queue, when he iterates the queue, and whatever tile he grabs will populate
+its neighbor region and then add those to the queue. 
