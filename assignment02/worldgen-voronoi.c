@@ -4,13 +4,17 @@
 #include <stdlib.h>
 #include "tiles.h"
 #include <math.h>
+#include <stdint.h>
+
 
 #define GRID_HEIGHT 24 - 3
 #define GRID_WIDTH 80
+#define WORLD_HEIGHT 401
+#define WORLD_WIDTH 401
 #define SEED_NUM 20
 
-static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
-static int gates[4 * 2]; // (4 x,y pairs for gates)
+
+
 
 typedef struct Seed
 {
@@ -19,40 +23,58 @@ typedef struct Seed
     char tile;
 } Seed;
 
-void init_world()
+typedef struct map {
+    char map[GRID_HEIGHT][GRID_WIDTH];
+    int n, s, e, w;
+    int visited;
+} terrain_map_t;
+
+
+static terrain_map_t* worldGrid[401][401];
+//static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
+static int gates[4 * 2]; // (4 x,y pairs for gates)
+
+
+
+void init_world(terrain_map_t *gridMap)
 {
+    
     for (int i = 0; i < GRID_HEIGHT; i++)
     {
-        gridMatrix[i][0] = mountainTile.ascii;
-        gridMatrix[i][GRID_WIDTH - 1] = mountainTile.ascii;
+        gridMap->map[i][0] = mountainTile.ascii;
+        gridMap->map[i][GRID_WIDTH - 1] = mountainTile.ascii;
     }
 
     for (int j = 0; j < GRID_WIDTH; j++)
     {
-        gridMatrix[0][j] = mountainTile.ascii;
-        gridMatrix[GRID_HEIGHT - 1][j] = mountainTile.ascii;
+        gridMap->map[0][j] = mountainTile.ascii;
+        gridMap->map[GRID_HEIGHT - 1][j] = mountainTile.ascii;
     }
 
     for (int i = 1; i < GRID_HEIGHT - 1; i++)
     {
         for (int j = 1; j < GRID_WIDTH - 1; j++)
         {
-            gridMatrix[i][j] = clearingTile.ascii;
+            gridMap->map[i][j] = clearingTile.ascii;
         }
     }
 
     // these may seem "backwards" but x gives us row and y gives entry in that row
     gates[0] = 1 + (rand() % (GRID_HEIGHT - 2));
     gates[1] = 0; // left gate
+    gridMap->w =gates[0];
     gates[2] = GRID_HEIGHT - 1;
     gates[3] = 1 + (rand() % (GRID_WIDTH - 2)); // bottom gate
+    gridMap->s = gates[3];
     gates[4] = 1 + (rand() % (GRID_HEIGHT - 2));
     gates[5] = GRID_WIDTH - 1; // right gate
+    gridMap->e = gates[4];
     gates[6] = 0;
     gates[7] = 1 + (rand() % (GRID_WIDTH - 2)); // top gate
+    gridMap->n = gates[7];
     for (int i = 0; i < 8; i += 2)
     {
-        gridMatrix[gates[i]][gates[i + 1]] = pathTile.ascii;
+        gridMap->map[gates[i]][gates[i + 1]] = pathTile.ascii;
     }
 }
 
@@ -67,14 +89,14 @@ void init_world()
 #define BRN "\e[38;5;94m"
 #define LBL "\e[38;5;33m"
 
-void print_grid()
+void print_grid(terrain_map_t *gridMap)
 {
     for (int i = 0; i < GRID_HEIGHT; i++)
     {
         for (int j = 0; j < GRID_WIDTH; j++)
         {
             char *color = "";
-            switch (gridMatrix[i][j])
+            switch (gridMap->map[i][j])
             {
             case '%':
                 color = MAG;
@@ -105,7 +127,7 @@ void print_grid()
                 fprintf(stderr, "unhandled color case\n");
                 break;
             }
-            printf("%s%c", color, gridMatrix[i][j]);
+            printf("%s%c", color, gridMap->map[i][j]);
         }
         putchar('\n');
     }
@@ -127,7 +149,7 @@ static inline double distance(int x, int y, int x2, int y2)
     return sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
 }
 
-void voronoi_world_gen(Seed storedSeeds[SEED_NUM])
+void voronoi_world_gen(Seed storedSeeds[SEED_NUM], terrain_map_t *gridMap)
 {
     // start at one because of border
     for (int x = 1; x < GRID_HEIGHT - 1; x++)
@@ -152,22 +174,22 @@ void voronoi_world_gen(Seed storedSeeds[SEED_NUM])
                 int treeChance = rand() % 100;
                 if (treeChance < 25)
                 {
-                    gridMatrix[x][y] = treeTile.ascii;
+                    gridMap->map[x][y] = treeTile.ascii;
                 }
                 else
                 {
-                    gridMatrix[x][y] = clearingTile.ascii;
+                    gridMap->map[x][y] = clearingTile.ascii;
                 }
             }
             else
             {
-                gridMatrix[x][y] = storedSeeds[closestSeed].tile;
+                gridMap->map[x][y] = storedSeeds[closestSeed].tile;
             }
         }
     }
 }
 
-void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rightY, int topX, int topY)
+void generate_path(terrain_map_t *m, int leftX, int leftY, int botX, int botY, int rightX, int rightY, int topX, int topY)
 {
 
     
@@ -193,7 +215,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // left gate: go right until bottom gate
     while (leftY < botY)
     {
-        gridMatrix[leftX][leftY] = pathTile.ascii;
+        m->map[leftX][leftY] = pathTile.ascii;
         leftY++;
     }
 
@@ -217,7 +239,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // left gate: go in virtical direction of right gate
     while (leftX != rightX)
     {
-        gridMatrix[leftX][leftY] = pathTile.ascii;
+        m->map[leftX][leftY] = pathTile.ascii;
         leftX += direction;
     }
     
@@ -231,7 +253,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // left gate: go rest of way in horizontal to right gate
     while (leftY != GRID_WIDTH)
     {
-        gridMatrix[leftX][leftY] = pathTile.ascii;
+        m->map[leftX][leftY] = pathTile.ascii;
         leftY++;
     }
 
@@ -250,7 +272,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // bottom gate: go up until right gate (leftX has been changed)
     while (botX > leftX)
     {
-        gridMatrix[botX][botY] = pathTile.ascii;
+        m->map[botX][botY] = pathTile.ascii;
         botX--;
     }
 
@@ -273,7 +295,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     direction = botY > topY ? -1 : 1;
     while (botY != topY)
     {
-        gridMatrix[botX][botY] = pathTile.ascii;
+        m->map[botX][botY] = pathTile.ascii;
         botY += direction;
     }
     Mplacement = 3;
@@ -288,27 +310,55 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     // bottom gate: go rest of the way up to top gate
     while (botX != 0)
     {
-        gridMatrix[botX][botY] = pathTile.ascii;
+        m->map[botX][botY] = pathTile.ascii;
         botX--;
     }
 
-    gridMatrix[PCx][PCy] = pokemonCenter.ascii;
-    gridMatrix[Mx][My] = pokeMart.ascii;
+    m->map[PCx][PCy] = pokemonCenter.ascii;
+    m->map[Mx][My] = pokeMart.ascii;
 }
 
+
+void display_map(terrain_map_t *map)
+{
+ 
+        Seed seeds[SEED_NUM];
+        init_world(map);
+        gen_voronoi_seeds(seeds);
+        voronoi_world_gen(seeds, map);
+    
+        print_grid(map);
+}
+
+void new_map(terrain_map_t*map)
+{
+    Seed seeds[SEED_NUM];
+    init_world(map);
+    gen_voronoi_seeds(seeds);
+    voronoi_world_gen(seeds, map);
+    generate_path(map, gates[0], gates[1], gates[2], gates[3], gates[4], gates[5], gates[6], gates[7]);
+
+}
 
 
 int main(void)
 {
+    int currentX = 200; int currentY = 200;
     srand(time(NULL));
-    Seed seeds[SEED_NUM];
+    //Seed seeds[SEED_NUM];
+    terrain_map_t d;
 
-    gen_voronoi_seeds(seeds);
-    init_world();
-    voronoi_world_gen(seeds);
+    new_map(&d);
+   // print_grid(&d);
 
-    generate_path(gates[0], gates[1], gates[2], gates[3], gates[4], gates[5], gates[6], gates[7]);
-    print_grid();
+    display_map(worldGrid[currentX][currentY]);
 
+   // printf("prior to the center call");
+   // place_center(&d);
+    //print_grid(&d);
+
+
+
+    
     return 0;
 }
