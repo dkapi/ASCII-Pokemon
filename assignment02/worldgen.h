@@ -43,6 +43,4 @@ typedef struct terrain_map
 } terrain_map_t;
 
 
-// void print_grid(terrain_map_t *map);
-
 #endif /* _WORLDGEN_H_ */

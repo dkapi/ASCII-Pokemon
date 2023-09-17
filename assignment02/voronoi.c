@@ -14,7 +14,7 @@ void generate_voronoi_map(terrain_map_t *gridMap)
     generate_map_border(gridMap);
     generate_voronoi_seeds(&seeds[0]);
     fill_vorinoi_map(gridMap, &seeds[0]);
-    Gates_t gates = {0};
+    Gates_t gates = {0}; // TODO: make sure this works with moving maps
     generate_map_gates(&gates);
     gridMap->grid[gates.left.x][gates.left.y] = pathTile.ascii;
     gridMap->grid[gates.right.x][gates.right.y] = pathTile.ascii;
