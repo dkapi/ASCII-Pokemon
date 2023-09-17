@@ -140,7 +140,7 @@ void generate_map_path(terrain_map_t *m, Gates_t gates)
    
     
     // left gate: go right until bottom gate
-    while (gates.left.x < gates.bottom.y)
+    while (gates.left.y < gates.bottom.y)
     {
         m->grid[gates.left.x][gates.left.y] = pathTile.ascii;
         gates.left.y++;

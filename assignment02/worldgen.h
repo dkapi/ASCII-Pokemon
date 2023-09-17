@@ -23,8 +23,8 @@
 
 typedef struct Location 
 {
-    uint8_t x;
-    uint8_t y;
+    int x;
+    int y;
 } Location_t;
 
 typedef struct Gates
