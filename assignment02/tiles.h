@@ -1,7 +1,6 @@
 /*
    Tile Definitions
 */
-
 #ifndef _TILES_H
 #define _TILES_H
 
@@ -26,7 +25,7 @@ struct tile_s
    const float adjacency[TileCount];
 };
 
-struct tile_s treeTile = 
+static const struct tile_s treeTile = 
 {
    .name = "tree",
    .ascii = '^',
@@ -34,7 +33,7 @@ struct tile_s treeTile =
    .adjacency = {0.f},
 };
 
-struct tile_s mountainTile = 
+static const struct tile_s mountainTile = 
 {
    .name = "mountain",
    .ascii = '%',
@@ -42,7 +41,7 @@ struct tile_s mountainTile =
    .adjacency = {0.f},
 };
 
-struct tile_s tallGrassTile = 
+static const struct tile_s tallGrassTile = 
 {
    .name = "tall-grass",
    .ascii = ':',
@@ -50,7 +49,7 @@ struct tile_s tallGrassTile =
    .adjacency = {0.f},
 };
 
-struct tile_s clearingTile = 
+static const struct tile_s clearingTile = 
 {
    .name = "clearing",
    .ascii = '.',
@@ -58,7 +57,7 @@ struct tile_s clearingTile =
    .adjacency = {0.f},
 };
 
-struct tile_s pathTile =
+static const struct tile_s pathTile =
 {
     .name = "path",
     .ascii = '#',
@@ -66,7 +65,7 @@ struct tile_s pathTile =
     .adjacency = {0.f},
 };
 
-struct tile_s waterTile =
+static const struct tile_s waterTile =
 {
     .name = "water",
     .ascii = '~',
@@ -74,7 +73,7 @@ struct tile_s waterTile =
     .adjacency = {0.f},
 };
 
-struct tile_s pokemonCenter = 
+static struct tile_s pokemonCenter = 
 {
  .name = "center",
  .ascii = 'C',
@@ -82,7 +81,7 @@ struct tile_s pokemonCenter =
  .adjacency = {0.f},
 };
 
-struct tile_s pokeMart = 
+static struct tile_s pokeMart = 
 {
    .name = "mart",
    .ascii = 'M',
@@ -91,16 +90,14 @@ struct tile_s pokeMart =
 
 
 // important to keep in the order you defined in the enum
-struct tile_s* tiles[TileCount] =
+static const struct tile_s* tiles[TileCount] =
 {
    &treeTile,
    &mountainTile,
    &tallGrassTile,
    &clearingTile,
    // &path,
-   &waterTile,
-   
+   &waterTile,   
 };
-
 
 #endif /* _TILES_H */
