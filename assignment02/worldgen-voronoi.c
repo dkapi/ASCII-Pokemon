@@ -30,7 +30,7 @@ typedef struct map {
 } terrain_map_t;
 
 
-static terrain_map_t* worldGrid[401][401];
+//static terrain_map_t* worldGrid[401][401];
 //static char gridMatrix[GRID_HEIGHT][GRID_WIDTH];
 static int gates[4 * 2]; // (4 x,y pairs for gates)
 
@@ -326,7 +326,7 @@ void display_map(terrain_map_t *map)
         init_world(map);
         gen_voronoi_seeds(seeds);
         voronoi_world_gen(seeds, map);
-    
+        generate_path(map, gates[0], gates[1], gates[2], gates[3], gates[4], gates[5], gates[6], gates[7]);
         print_grid(map);
 }
 
@@ -343,22 +343,33 @@ void new_map(terrain_map_t*map)
 
 int main(void)
 {
+    terrain_map_t *worldMap[WORLD_HEIGHT][WORLD_WIDTH];
     int currentX = 200; int currentY = 200;
     srand(time(NULL));
     //Seed seeds[SEED_NUM];
     terrain_map_t d;
 
-    new_map(&d);
-   // print_grid(&d);
+    for(int i =0; i < WORLD_HEIGHT; i++){
+        for(int j =0; j < WORLD_WIDTH; ++j){
+            worldMap[i][j] = (terrain_map_t*)malloc(sizeof(terrain_map_t));
+        }
+    }
 
-    display_map(worldGrid[currentX][currentY]);
+    new_map(&d);
+
+
+    display_map(worldMap[currentX][currentY]);
 
    // printf("prior to the center call");
    // place_center(&d);
     //print_grid(&d);
 
 
-
+    // for(int i =0; i < WORLD_HEIGHT; ++i){
+    //     for(int j = 0; i < WORLD_WIDTH; ++j){
+    //         free(sizeof(worldMap[i][j]));
+    //     }
+    // }
     
     return 0;
 }
