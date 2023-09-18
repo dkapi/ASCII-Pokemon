@@ -116,7 +116,8 @@ int main(void)
     generate_voronoi_map(firstGrid, gates);
     worldMap[firstGrid->location.x][firstGrid->location.y] = firstGrid;
     print_map(worldMap[currLoc.x][currLoc.y]);
-    printf(WHT);
+        printf("%scurrent location: (%d,%d) movement input:",WHT,currLoc.x-200,currLoc.y-200 );
+
 
     char userInput[10];
     bool shouldQuit = false;
@@ -131,6 +132,7 @@ int main(void)
             // printf("%s curr location: (%d, %d)\n",WHT, currLoc.x-200, currLoc.y-200);
         }
         print_map(worldMap[newLoc.x][newLoc.y]);
+        printf("%scurrent location: (%d,%d) movment input:",WHT,newLoc.x-200,newLoc.y-200 );
         printf(WHT);
         currLoc = newLoc;
     }
