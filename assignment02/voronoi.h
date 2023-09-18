@@ -21,7 +21,10 @@ void generate_map_gates(terrain_map_t *map, Gates_t* gates);
 
 void generate_map_path(terrain_map_t *m, Gates_t gates);
 
-void find_building_location(terrain_map_t *m);
+void find_building_location(terrain_map_t *m, Location_t *l);
 
+void place_center(terrain_map_t *m);
+
+void place_mart(terrain_map_t *m);
 
 #endif  /* _WORLDGEN_VORONOI_H */
