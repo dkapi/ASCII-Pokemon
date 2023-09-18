@@ -56,28 +56,28 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
     switch((int)buf[0]) {
         case 'n':
             loc.y += loc.y > 0 ? 1 : 0;
-            gates->bottom = gates->top;
+            gates->bottom = (Location_t) { .x = gates->bottom.x, .y = gates->top.y};
             gates->top = (Location_t){ .x = 0, .y = 0 };
             gates->left = (Location_t){ .x = 0, .y = 0 };
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break;
         case 's':
             loc.y += loc.y < 401 ? -1 : 0;
-            gates->top = gates->bottom;
+            gates->top = (Location_t){ .x = gates->top.x, .y = gates->bottom.y };
             gates->bottom = (Location_t){ .x = 0, .y = 0 };
             gates->left = (Location_t){ .x = 0, .y = 0 };
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break;
         case 'e':
             loc.x += loc.x > 0 ? 1 : 0;
-            gates->left = gates->right;
+            gates->left = (Location_t){ .x = gates->right.x, .y = gates->left.y };
             gates->bottom = (Location_t){ .x = 0, .y = 0 };
             gates->top = (Location_t){ .x = 0, .y = 0 };
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break;
         case 'w':
             loc.x += loc.x < 401 ? -1 : 0;
-            gates->right = gates->left;
+            gates->right = (Location_t){ .x = gates->left.x, .y = gates->right.y };
             gates->bottom = (Location_t){ .x = 0, .y = 0 };
             gates->top = (Location_t){ .x = 0, .y = 0 };
             gates->left = (Location_t){ .x = 0, .y = 0 };
@@ -88,6 +88,7 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             if(x < 401 && y < 401) {
                 loc.x = x;
                 loc.y = y;
+                *gates = (Gates_t){0};
             }
             break;
         case 'q':
@@ -109,12 +110,13 @@ int main(void)
         }
     }
 
-    terrain_map_t* firstGrid = (terrain_map_t*)malloc(sizeof(terrain_map_t));
+    terrain_map_t* currGrid = (terrain_map_t*)malloc(sizeof(terrain_map_t));
     Location_t currLoc = { .x = 200, .y = 200 };
-    firstGrid->location = currLoc;
+    currGrid->location = currLoc;
     Gates_t gates = {0};
-    generate_voronoi_map(firstGrid, gates);
-    worldMap[firstGrid->location.x][firstGrid->location.y] = firstGrid;
+    generate_voronoi_map(currGrid, gates);
+    worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
+    gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
         printf("%scurrent location: (%d,%d) movement input:",WHT,currLoc.x-200,currLoc.y-200 );
 
@@ -122,19 +124,24 @@ int main(void)
     char userInput[10];
     bool shouldQuit = false;
     while(!shouldQuit) {
-        get_input(sizeof(userInput)/sizeof(userInput[0]), &userInput[0]);
-        Location_t newLoc = handle_input(sizeof(userInput)/sizeof(userInput[0]), &userInput[0], currLoc, &gates, &shouldQuit);
+        size_t input_n = sizeof(userInput)/sizeof(userInput[0]);
+        get_input(input_n, &userInput[0]);
+        Location_t newLoc = handle_input(input_n, &userInput[0], currLoc, &gates, &shouldQuit);
         if((currLoc.x != newLoc.x || currLoc.y != newLoc.y) && worldMap[newLoc.x][newLoc.y] == NULL) {
             terrain_map_t* newGrid = (terrain_map_t*)malloc(sizeof(terrain_map_t));
             newGrid->location = newLoc;
             generate_voronoi_map(newGrid, gates);
             worldMap[newGrid->location.x][newGrid->location.y] = newGrid;
+            currGrid = newGrid;
+            
             // printf("%s curr location: (%d, %d)\n",WHT, currLoc.x-200, currLoc.y-200);
         }
         print_map(worldMap[newLoc.x][newLoc.y]);
         printf("%scurrent location: (%d,%d) movment input:",WHT,newLoc.x-200,newLoc.y-200 );
         printf(WHT);
         currLoc = newLoc;
+        gates = currGrid->gates;
+
     }
 
     for(int i =0; i < WORLD_HEIGHT; i++) {
