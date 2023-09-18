@@ -9,15 +9,15 @@ typedef struct Seed
     char tile;
 } Seed_t;
 
-void generate_voronoi_map(terrain_map_t *gridMap);
+void generate_voronoi_map(terrain_map_t *map, Gates_t gates);
 
-void fill_vorinoi_map(terrain_map_t *gridMap, Seed_t* seeds);  // TODO: rename
+void fill_vorinoi_map(terrain_map_t *map, Seed_t* seeds);  // TODO: rename
 
-void generate_map_border(terrain_map_t *gridMap);
+void generate_map_border(terrain_map_t *map);
 
 void generate_voronoi_seeds(Seed_t* seeds);
 
-void generate_map_gates(Gates_t* gates);
+void generate_map_gates(terrain_map_t *map, Gates_t* gates);
 
 void generate_map_path(terrain_map_t *m, Gates_t gates);
 
