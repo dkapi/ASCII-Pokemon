@@ -30,3 +30,21 @@
              or on top of path depending on where the path spawns.
 
 09/09 20:48 still cant get all bounds to work, fixed a few seg fault crashes
+
+09/14 15:32: created assignmen2 branch
+
+09/15 18:20: fixed some bugs with spawing
+
+09/16 14:12: converted most stuff to structs and prepped worldMap grid
+
+09/16 16:53: fixed seg fault on world map
+
+09/17 12:42: did some refractoring
+
+09/17 13:28 most of grid traversal complete, fly still has bugs
+
+09/17 15:03 user input complete
+
+09/17 18:49: fixed building spawing.
+
+09/17 20:13: bugfixes

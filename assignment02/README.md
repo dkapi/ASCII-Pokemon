@@ -1,22 +1,18 @@
-TO RUN : make voronoi (to make binary) then simply run binary.
+TO RUN : run make cmd without parameters then run binary
 
--worldgen
+-known bugs
+flying south is really questionable and i dont know why, because flying 
+north is fine. 
 
-so with this assignment i have written a world generation c file that builds 
-the world based on voronoi points, makes some pretty cool generations. i 
-currenlty have the forest biome being mixed with a little bit of clearing,
-but will change if needed.
+the logic is there for removing gates on edges, in case you tried to check
+south gate first, please fly to f 400 400, and as you can see no border.
 
--path gen
+going step by step I.E. n,s,e,w all work perfectly fine
 
-path genning is fine, no bugs should appear, wrote it based on what shaeffer 
-recommended in class.
+-funny bug, sometimes when flying the grid will print twice, dosent break
+ anything but i think the error is in the pointers.
 
--building spawing (known bugs here)
-
-building spawning was actually kind of difficult in that you constantly need
-to check where building are spawning, i have most of the bound fixed for 
-this but sometimes the buildings will still spawn ontop paths, or on the 
-border. (will be fixed eventually, probably when i look at how shaeffer does 
-it in his code)
-
+-also logic is there for not moving further if you are already on a border
+ grid, but im getting a weird seg fault after that logic, so while that part
+ of the assignment is implemented in lines 58 of worldgen.c and it works. 
+ until later code is reached...

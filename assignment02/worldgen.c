@@ -60,6 +60,7 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             gates->top = (Location_t){ .x = 0, .y = 0 };
             gates->left = (Location_t){ .x = 0, .y = 0 };
             gates->right = (Location_t){ .x = 0, .y = 0 };
+            break; 
             break;
         case 's':
             loc.y += loc.y < 401 ? -1 : 0;
@@ -84,11 +85,14 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             break;
         case 'f':
             int x,y;
-            sscanf(buf, "f %d %d", &x, &y);
-            if(x < 401 && y < 401) {
-                loc.x = x;
-                loc.y = y;
-                *gates = (Gates_t){0};
+            if(sscanf(buf, "f %d %d", &x, &y) == 2){
+                if((-400 <= x && x < 401) && (-400 <= y && y <401)){
+                    loc.x = x;
+                    loc.y = y;
+                    *gates = (Gates_t){0};
+                 }else {
+                    printf("invalid cordinates\n");
+                 }
             }
             break;
         case 'q':
@@ -138,7 +142,6 @@ int main(void)
         }
         print_map(worldMap[newLoc.x][newLoc.y]);
         printf("%scurrent location: (%d,%d) movment input:",WHT,newLoc.x-200,newLoc.y-200 );
-        printf(WHT);
         currLoc = newLoc;
         gates = currGrid->gates;
 
