@@ -176,26 +176,26 @@ void generate_map_path(terrain_map_t *m, Gates_t gates)
       l->x = rand() % (GRID_HEIGHT -3) +1;
       l->y = rand() % (GRID_WIDTH -3) +1;
 
-        if((m->grid[l->x-1][l->y]   == pathTile.ascii    &&
-          m->grid[l->x-1][l->y+1] == pathTile.ascii)    ||
+        if((m->grid[l->x-1][l->y]    == pathTile.ascii    &&
+          m->grid[l->x-1][l->y+1]    == pathTile.ascii)   ||
           (m->grid[l->x+2][l->y]     == pathTile.ascii    &&
-          m->grid[l->x+2][l->y+1] == pathTile.ascii)    ||
-          (m->grid[l->x][l->y-1] == pathTile.ascii    &&
-          m->grid[l->x+1][l->y-1] == pathTile.ascii)    ||
-          (m->grid[l->x][l->y+2] == pathTile.ascii    &&
-          m->grid[l->x+1][l->y+2] == pathTile.ascii    &&
-          m->grid[l->x][l->y]     != pokeMart.ascii    &&
-          m->grid[l->x][l->y]     != pokemonCenter.ascii  &&
-          m->grid[l->x+1][l->y]     != pokeMart.ascii    &&
-          m->grid[l->x+1][l->y]     != pokemonCenter.ascii  &&
-          m->grid[l->x][l->y+1] != pokeMart.ascii    &&
-          m->grid[l->x][l->y+1] != pokemonCenter.ascii  &&
-          m->grid[l->x+1][l->y+1] != pokeMart.ascii    &&
-          m->grid[l->x+1][l->y+1] != pokemonCenter.ascii  &&
-          m->grid[l->x][l->y]     != pathTile.ascii    &&
-          m->grid[l->x+1][l->y]     != pathTile.ascii    &&
-          m->grid[l->x][l->y+1] != pathTile.ascii    &&
-          m->grid[l->x+1][l->y+1] != pathTile.ascii)) {
+          m->grid[l->x+2][l->y+1]    == pathTile.ascii)   ||
+          (m->grid[l->x][l->y-1]     == pathTile.ascii    &&
+          m->grid[l->x+1][l->y-1]    == pathTile.ascii)   ||
+          (m->grid[l->x][l->y+2]     == pathTile.ascii    &&
+          m->grid[l->x+1][l->y+2]    == pathTile.ascii    &&
+          m->grid[l->x][l->y]        != pokeMart.ascii    &&
+          m->grid[l->x][l->y]        != pokemonCenter.ascii  &&
+          m->grid[l->x+1][l->y]      != pokeMart.ascii    &&
+          m->grid[l->x+1][l->y]      != pokemonCenter.ascii  &&
+          m->grid[l->x][l->y+1]      != pokeMart.ascii    &&
+          m->grid[l->x][l->y+1]      != pokemonCenter.ascii  &&
+          m->grid[l->x+1][l->y+1]    != pokeMart.ascii    &&
+          m->grid[l->x+1][l->y+1]    != pokemonCenter.ascii  &&
+          m->grid[l->x][l->y]        != pathTile.ascii    &&
+          m->grid[l->x+1][l->y]      != pathTile.ascii    &&
+          m->grid[l->x][l->y+1]      != pathTile.ascii    &&
+          m->grid[l->x+1][l->y+1]    != pathTile.ascii)) {
             break;
           }
     }while(1); 
