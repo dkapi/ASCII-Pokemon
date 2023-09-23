@@ -55,7 +55,7 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
 {
     switch((int)buf[0]) {
         case 'n':
-        if(loc.y == 400) { printf("you've reached the border pokemon master!\n\n");
+        if(loc.y == 400) { printf("you've reached the border pokemon master!\n");
             break;
         }
             loc.y += loc.y >= 0 ? 1 : 0;
@@ -65,7 +65,7 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break; 
         case 's':
-        if (loc.y == 0) {  printf("you've reached the border pokemon master!\n\n");
+        if (loc.y == 0) {  printf("you've reached the border pokemon master!\n");
              break;
         }
             loc.y += loc.y < 401 ? -1 : 0;
@@ -75,7 +75,7 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break;
         case 'e':
-        if(loc.x == 400) { printf("you've reached the border pokemon master!\n\n");
+        if(loc.x == 400) { printf("you've reached the border pokemon master!\n");
             break;
         }
             loc.x += loc.x >= 0 ? 1 : 0;
@@ -85,7 +85,7 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break;
         case 'w':
-        if(loc.x == 0) { printf("you've reached the border pokemon master!\n\n");
+        if(loc.x == 0) { printf("you've reached the border pokemon master!\n");
             break;
         }
             loc.x += loc.x < 401 ? -1 : 0;
@@ -152,7 +152,7 @@ int main(void)
             currGrid = newGrid;
         }
         print_map(worldMap[newLoc.x][newLoc.y]);
-        printf("%scurrent location: (%d,%d) movment input: %c \n", WHITE,
+        printf("%scurrent location: (%d,%d), movment input: %c \n", WHITE,
                 (newLoc.x < 0 ? newLoc.x +200 : newLoc.x -200),
                 (newLoc.y < 0 ? newLoc.y +200 : newLoc.y -200),
                 userInput[0]);
