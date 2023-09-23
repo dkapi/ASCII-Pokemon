@@ -86,13 +86,15 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
        case 'f':
             int x,y;
             if(sscanf(buf, "f %d %d", &x, &y) == 2){
-                if((-400 <= x && x < 401) && (-400 <= y && y <401)){
-                    loc.x = x;
-                    loc.y = y;
+                if((-200 <= x && x <= 200) && (-200 <= y && y <= 200)) {
+                    loc.x = x + 200;
+                    loc.y = y + 200;
                     *gates = (Gates_t){0};
-                 }else {
+                }
+                else {
+                    // TODO: this should not print this?
                     printf("invalid cordinates\n");
-                 }
+                }
             }
             break;
         case 'q':
@@ -108,8 +110,8 @@ int main(void)
     srand(time(NULL));
     terrain_map_t* worldMap[WORLD_HEIGHT][WORLD_WIDTH];
 
-    for(int i = 0; i < 401; ++i) {
-        for(int j = 0; j < 401; ++j) {
+    for(int i = 0; i < WORLD_HEIGHT; ++i) {
+        for(int j = 0; j < WORLD_WIDTH; ++j) {
             worldMap[i][j] = NULL;
         }
     }
@@ -122,10 +124,10 @@ int main(void)
     worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
-        printf("%scurrent location: (%d,%d) movement input:",WHT,currLoc.x-200,currLoc.y-200 );
+    printf("%scurrent location: (%d,%d) movement input:",WHT,currLoc.x-200,currLoc.y-200 );
 
 
-    char userInput[10];
+    char userInput[32];
     bool shouldQuit = false;
     while(!shouldQuit) {
         size_t input_n = sizeof(userInput)/sizeof(userInput[0]);
@@ -137,14 +139,11 @@ int main(void)
             generate_voronoi_map(newGrid, gates);
             worldMap[newGrid->location.x][newGrid->location.y] = newGrid;
             currGrid = newGrid;
-            
-            // printf("%s curr location: (%d, %d)\n",WHT, currLoc.x-200, currLoc.y-200);
         }
-        printf("%scurrent location: (%d,%d) movment input:",WHT,
-                (newLoc.x < 0 ? newLoc.x +200 : newLoc.x -200),
-                (newLoc.y < 0 ? newLoc.y +200 : newLoc.y -200));
+        printf("%scurrent location: (%d,%d) movment input:", WHT, newLoc.x - 200, newLoc.y - 200);
         currLoc = newLoc;
         gates = currGrid->gates;
+        print_map(worldMap[newLoc.x][newLoc.y]);
 
     }
 
