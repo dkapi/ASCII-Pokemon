@@ -55,13 +55,19 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
 {
     switch((int)buf[0]) {
         case 'n':
-            loc.y += loc.y > 0 ? 1 : 0;
+        if(loc.y == 400) { printf("you've reached the border pokemon master!\n\n");
+            break;
+        }
+            loc.y += loc.y >= 0 ? 1 : 0;
             gates->bottom = (Location_t) { .x = gates->bottom.x, .y = gates->top.y};
             gates->top = (Location_t){ .x = 0, .y = 0 };
             gates->left = (Location_t){ .x = 0, .y = 0 };
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break; 
         case 's':
+        if (loc.y == 0) {  printf("you've reached the border pokemon master!\n\n");
+             break;
+        }
             loc.y += loc.y < 401 ? -1 : 0;
             gates->top = (Location_t){ .x = gates->top.x, .y = gates->bottom.y };
             gates->bottom = (Location_t){ .x = 0, .y = 0 };
@@ -69,13 +75,19 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break;
         case 'e':
-            loc.x += loc.x > 0 ? 1 : 0;
+        if(loc.x == 400) { printf("you've reached the border pokemon master!\n\n");
+            break;
+        }
+            loc.x += loc.x >= 0 ? 1 : 0;
             gates->left = (Location_t){ .x = gates->right.x, .y = gates->left.y };
             gates->bottom = (Location_t){ .x = 0, .y = 0 };
             gates->top = (Location_t){ .x = 0, .y = 0 };
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break;
         case 'w':
+        if(loc.x == 0) { printf("you've reached the border pokemon master!\n\n");
+            break;
+        }
             loc.x += loc.x < 401 ? -1 : 0;
             gates->right = (Location_t){ .x = gates->left.x, .y = gates->right.y };
             gates->bottom = (Location_t){ .x = 0, .y = 0 };
@@ -91,13 +103,13 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
                     *gates = (Gates_t){0};
                 }
                 else {
-                    // TODO: this should not print this?
-                    printf("invalid cordinates\n");
+                    printf("you cant fly that far on your pidgey!\n");
                 }
             }
             break;
         case 'q':
             *quit = true;
+            printf("But how are you going to be the very best if you quit..\n");
             break;
     }
     return loc;
@@ -123,7 +135,7 @@ int main(void)
     worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
-    printf("%scurrent location: (%d,%d) movement input:",WHITE,currLoc.x - 200,currLoc.y - 200 );
+    printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
 
 
     char userInput[32];
@@ -140,8 +152,10 @@ int main(void)
             currGrid = newGrid;
         }
         print_map(worldMap[newLoc.x][newLoc.y]);
-        printf("%scurrent location: (%d,%d) movment input:", WHITE,  (newLoc.x < 0 ? newLoc.x +200 : newLoc.x -200),
-                (newLoc.y < 0 ? newLoc.y +200 : newLoc.y -200));
+        printf("%scurrent location: (%d,%d) movment input: %c \n", WHITE,
+                (newLoc.x < 0 ? newLoc.x +200 : newLoc.x -200),
+                (newLoc.y < 0 ? newLoc.y +200 : newLoc.y -200),
+                userInput[0]);
         currLoc = newLoc;
         gates = currGrid->gates;
 
