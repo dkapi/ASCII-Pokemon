@@ -276,12 +276,10 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         gridMatrix[botX][botY] = pathTile.ascii;
         botY += direction;
     }
-    Mplacement = 3;
     // place pokemon center on last run to top gate
     if(Mplacement == 3) {
         My = botY + 1; // TODO: fixme
         Mx = 1 + (rand() % (botX - topX + 1));
-     //   printf("placement:%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
     }
 
 
@@ -295,8 +293,6 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     gridMatrix[PCx][PCy] = pokemonCenter.ascii;
     gridMatrix[Mx][My] = pokeMart.ascii;
 }
-
-
 
 int main(void)
 {
