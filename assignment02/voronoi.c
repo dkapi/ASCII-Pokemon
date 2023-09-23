@@ -157,10 +157,10 @@ void generate_map_path(terrain_map_t *m, Gates_t gates)
     if(m->location.y == 400){
         m->grid[gates.top.x][gates.top.y] = mountainTile.ascii;
     }
-    if(m->location.x == -400){
+    if(m->location.x == 0){
         m->grid[gates.left.x][gates.left.y] = mountainTile.ascii;
     }
-    if(m->location.y == -400){
+    if(m->location.y == 0){
         m->grid[gates.bottom.x][gates.bottom.y] = mountainTile.ascii;
     }
     if(m->location.x == 400){
