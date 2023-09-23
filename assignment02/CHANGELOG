@@ -1,0 +1,50 @@
+09/02 16:54: added initial tile header, and worldgen file
+
+09/02 17:23: added init_world def
+
+09/03 12:11: added path tile to tile.h, added Makefile, and added init_world
+             functionality
+
+09/05 15:44: added seed_gen and colo for basic setup of worldgen prep
+
+09/06 18:23: update/added heper functions, and added main function for voronoi
+             worldgen
+
+09/06 18:54: added color to the worldgen
+
+09/06 19:22: added more seeds to see if it fixed large biome issues
+
+09/06 20:00: fixe seed placement issues
+
+09/07 13:30: added gates to border to prep for path generation
+
+09/08 17:42: added path generation
+
+09/08 20:03: partially working building spawn, alot of bugs in spawning
+
+09/09 16:37: mosting working pokemon center spawning and pokemon mart 
+            spawing.
+
+09/09 18:14: fixed some edge cases in the bugs, still havnt got border
+             checking to work, so sometimes buildings spawn on border 
+             or on top of path depending on where the path spawns.
+
+09/09 20:48 still cant get all bounds to work, fixed a few seg fault crashes
+
+09/14 15:32: created assignmen2 branch
+
+09/15 18:20: fixed some bugs with spawing
+
+09/16 14:12: converted most stuff to structs and prepped worldMap grid
+
+09/16 16:53: fixed seg fault on world map
+
+09/17 12:42: did some refractoring
+
+09/17 13:28 most of grid traversal complete, fly still has bugs
+
+09/17 15:03 user input complete
+
+09/17 18:49: fixed building spawing.
+
+09/17 20:13: bugfixes

@@ -186,7 +186,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
             PCx = leftX +1;
         }
         PCy = leftY + (rand() % (botY - leftY - 1));
-        printf("placement%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
+       // printf("placement%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
    
     
@@ -209,7 +209,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
             PCx = rightX + (rand() % (leftX-rightX));
         }
         PCy = leftY - 1;
-        printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
+      //  printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
    
 
@@ -225,7 +225,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
     if(PCplacement == 3) {
         PCx = leftX - 1; // TODO: fixme
         PCy = leftY + (rand() % (rightY - leftY + 1));
-        printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
+       // printf("placement:%d, PCx:%d, PCy:%d\n", PCplacement, PCx, PCy); 
     }
 
     // left gate: go rest of way in horizontal to right gate
@@ -244,7 +244,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
             My = botY +1;
         }
         Mx = leftX + (rand() % (botX - leftX + 1));
-        printf("placement%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
+       // printf("placement%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
     }
 
     // bottom gate: go up until right gate (leftX has been changed)
@@ -266,7 +266,7 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
             My = topY + (rand() % (botY-topY));
         }
         Mx = botX + 1;
-        printf("placement:%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
+       // printf("placement:%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
     }
 
     // bottom gate: go in horizontal direction of top gate
@@ -276,12 +276,10 @@ void generate_path(int leftX, int leftY, int botX, int botY, int rightX, int rig
         gridMatrix[botX][botY] = pathTile.ascii;
         botY += direction;
     }
-
     // place pokemon center on last run to top gate
     if(Mplacement == 3) {
         My = botY + 1; // TODO: fixme
         Mx = 1 + (rand() % (botX - topX + 1));
-        printf("placement:%d, Mx:%d, My:%d\n", Mplacement, Mx, My); 
     }
 
 
