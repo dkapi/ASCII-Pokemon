@@ -11,16 +11,16 @@
 #define WORLD_SIZE 401
 #define SEED_NUM 20
 
-#define BLK "\e[0;30m"
-#define RED "\e[0;31m"
-#define GRN "\e[0;32m"
-#define YEL "\e[38;5;137m"
-#define BLU "\e[0;34m"
-#define MAG "\e[0;35m"
-#define CYN "\e[0;36m"
-#define WHT "\e[0;37m"
-#define BRN "\e[38;5;94m"
-#define LBL "\e[38;5;33m"
+#define BLACK   "\e[0;30m"
+#define RED     "\e[0;31m"
+#define GREEN   "\e[0;32m"
+#define YELLOW  "\e[38;5;137m"
+#define BLUE    "\e[0;34m"
+#define MAGENTA "\e[0;35m"
+#define CYAN    "\e[0;36m"
+#define WHITE   "\e[0;37m"
+#define BROWN   "\e[38;5;94m"
+#define LBLUE   "\e[38;5;33m"
 
 typedef struct Location 
 {

@@ -209,7 +209,7 @@ void place_mart(terrain_map_t *m)
     int building_chance;
     int chance_center;
 
-    if(m->location.x == 200 && m->location.y == 200){
+    if(m->location.x == 200 && m->location.y == 200) {
         Location_t l;
         find_building_location(m, &l);
 
@@ -217,8 +217,10 @@ void place_mart(terrain_map_t *m)
         m->grid[l.x +1][l.y] = pokeMart.ascii;
         m->grid[l.x][l.y+1] = pokeMart.ascii;
         m->grid[l.x +1][l.y+1] = pokeMart.ascii;
-    } else {
-        manhattan_dist = abs(0- m->location.x) + abs(0 - m->location.y);
+    }
+    else {
+        // TODO: make mangattan distance use offset from 200, 200 (since that is 0,0)
+        manhattan_dist = abs(0 - m->location.x) + abs(0 - m->location.y);
         building_chance = (((manhattan_dist * -45)/200)+40)/-1;
         chance_center = rand() % 100;
         if(chance_center > building_chance){
@@ -249,6 +251,7 @@ void place_center(terrain_map_t *m)
         m->grid[l.x][l.y+1] = pokemonCenter.ascii;
         m->grid[l.x +1][l.y+1] = pokemonCenter.ascii;
     } else {
+        // TODO: copy other manhattan fix
         manhattan_dist = abs(0- m->location.x) + abs(0 - m->location.y);
         building_chance = (((manhattan_dist * -45)/200)+40)/-1;
         chance_center = rand() % 100;

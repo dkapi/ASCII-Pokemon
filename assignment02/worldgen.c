@@ -7,34 +7,33 @@
 
 void print_map(terrain_map_t *map) // TODO: take grid not map
 {
-
     for(int i = 0; i < GRID_HEIGHT; i++) {
         for(int j = 0; j < GRID_WIDTH; j++) {
             char *color = "";
             switch (map->grid[i][j]) {
                 case '%':
-                    color = MAG;
+                    color = MAGENTA;
                     break;
                 case '.':
-                    color = YEL;
+                    color = YELLOW;
                     break;
                 case '~':
-                    color = BLU;
+                    color = BLUE;
                     break;
                 case '^':
-                    color = GRN;
+                    color = GREEN;
                     break;
                 case ':':
-                    color = GRN;
+                    color = GREEN;
                     break;
                 case '#':
-                    color = BRN;
+                    color = BROWN;
                     break;
                 case 'C':
                     color = RED;
                     break;
                 case 'M':
-                    color = LBL;
+                    color = LBLUE;
                     break;
                 default:
                     // unreachable
@@ -124,7 +123,7 @@ int main(void)
     worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
-    printf("%scurrent location: (%d,%d) movement input:",WHT,currLoc.x-200,currLoc.y-200 );
+    printf("%scurrent location: (%d,%d) movement input:",WHITE,currLoc.x - 200,currLoc.y - 200 );
 
 
     char userInput[32];
@@ -140,10 +139,11 @@ int main(void)
             worldMap[newGrid->location.x][newGrid->location.y] = newGrid;
             currGrid = newGrid;
         }
-        printf("%scurrent location: (%d,%d) movment input:", WHT, newLoc.x - 200, newLoc.y - 200);
+        print_map(worldMap[newLoc.x][newLoc.y]);
+        printf("%scurrent location: (%d,%d) movment input:", WHITE,  (newLoc.x < 0 ? newLoc.x +200 : newLoc.x -200),
+                (newLoc.y < 0 ? newLoc.y +200 : newLoc.y -200));
         currLoc = newLoc;
         gates = currGrid->gates;
-        print_map(worldMap[newLoc.x][newLoc.y]);
 
     }
 
