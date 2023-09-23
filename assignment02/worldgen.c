@@ -7,6 +7,7 @@
 
 void print_map(terrain_map_t *map) // TODO: take grid not map
 {
+
     for(int i = 0; i < GRID_HEIGHT; i++) {
         for(int j = 0; j < GRID_WIDTH; j++) {
             char *color = "";
@@ -61,7 +62,6 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             gates->left = (Location_t){ .x = 0, .y = 0 };
             gates->right = (Location_t){ .x = 0, .y = 0 };
             break; 
-            break;
         case 's':
             loc.y += loc.y < 401 ? -1 : 0;
             gates->top = (Location_t){ .x = gates->top.x, .y = gates->bottom.y };
@@ -83,7 +83,7 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
             gates->top = (Location_t){ .x = 0, .y = 0 };
             gates->left = (Location_t){ .x = 0, .y = 0 };
             break;
-        case 'f':
+       case 'f':
             int x,y;
             if(sscanf(buf, "f %d %d", &x, &y) == 2){
                 if((-400 <= x && x < 401) && (-400 <= y && y <401)){
@@ -140,8 +140,9 @@ int main(void)
             
             // printf("%s curr location: (%d, %d)\n",WHT, currLoc.x-200, currLoc.y-200);
         }
-        print_map(worldMap[newLoc.x][newLoc.y]);
-        printf("%scurrent location: (%d,%d) movment input:",WHT,newLoc.x-200,newLoc.y-200 );
+        printf("%scurrent location: (%d,%d) movment input:",WHT,
+                (newLoc.x < 0 ? newLoc.x +200 : newLoc.x -200),
+                (newLoc.y < 0 ? newLoc.y +200 : newLoc.y -200));
         currLoc = newLoc;
         gates = currGrid->gates;
 
@@ -149,8 +150,9 @@ int main(void)
 
     for(int i =0; i < WORLD_HEIGHT; i++) {
         for(int j =0; j < WORLD_WIDTH; j++) {
-            if(worldMap[i][j] != NULL){
+            if(worldMap[i][j]){
             free(worldMap[i][j]);
+            worldMap[i][j] = NULL;
             }
         }
     }

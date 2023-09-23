@@ -8,6 +8,7 @@
 #define GRID_WIDTH 80
 #define WORLD_HEIGHT 401
 #define WORLD_WIDTH 401
+#define WORLD_SIZE 401
 #define SEED_NUM 20
 
 #define BLK "\e[0;30m"
