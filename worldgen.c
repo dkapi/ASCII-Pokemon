@@ -5,6 +5,7 @@
 #include "worldgen.h"
 #include "voronoi.h"
 #include "characters.h"
+#include "dijkstra.h"
 
 void print_map(terrain_map_t *map) // TODO: take grid not map
 {
@@ -138,12 +139,14 @@ int main(void)
     currGrid->location = currLoc;
     Gates_t gates = {0};
     generate_voronoi_map(currGrid, gates);
-    place_character(currGrid);
+    Location_t PC = place_character(currGrid);
     worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
     printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
 
+    dijkstra_node_t *dNode = dijkstra_map(&currGrid, &PC);
+    print_dijkstra_map(dNode);
 
     char userInput[32];
     bool shouldQuit = false;

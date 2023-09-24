@@ -2,13 +2,18 @@
 #define DIJKSTRA_H
 
 #include "heap.h"
+#include "worldgen.h"
 
-
-typedef struct queue_node {
-    int x, y;
+typedef struct node 
+{
+    Location_t *from, *pos, *prev;
     struct queue_node *next;
-    
-} queue_node_t;
+    int distance, cost;
+    int visited;
+    heap_node_t *hn;
+}dijkstra_node_t;
+
+dijkstra_node_t* dijkstra_map(terrain_map_t *map, Location_t *l);
 
 
 #endif /*DIJKSTRA_H*/

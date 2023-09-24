@@ -9,7 +9,7 @@ CFLAGS = -Wall -Werror -ggdb -funroll-loops
 LDFLAGS = -lm
 
 BIN = worldgen
-OBJS = voronoi.o dijkstra.o characters.o worldgen.o
+OBJS = voronoi.o heap.o dijkstra.o characters.o worldgen.o
 all: $(BIN) etags
 
 $(BIN): $(OBJS)

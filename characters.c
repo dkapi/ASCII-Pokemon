@@ -21,7 +21,7 @@ void find_loco_to_place(terrain_map_t *map, Location_t *l)
 
 
 
-void place_character(terrain_map_t *map)
+Location_t  place_character(terrain_map_t *map)
 {
   (void)tiles[TileCount];
     Location_t l;
@@ -31,4 +31,6 @@ void place_character(terrain_map_t *map)
     pc.location.x = l.x;
     pc.location.y = l.y;
     pc.tile = &pathTile;
+    
+    return l;
 }

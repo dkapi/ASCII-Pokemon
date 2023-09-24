@@ -14,6 +14,6 @@ extern struct player pc;
 
 
 void find_loco_to_place(terrain_map_t *map, Location_t *l);
-void place_character(terrain_map_t *map);
+Location_t place_character(terrain_map_t *map);
 
 #endif /* CHARACTERS_H*/

@@ -41,6 +41,7 @@ typedef struct terrain_map
     char grid[GRID_HEIGHT][GRID_WIDTH];
     Location_t location;
     Gates_t gates;
+    int visited, cost, distance;
 } terrain_map_t;
 
 
