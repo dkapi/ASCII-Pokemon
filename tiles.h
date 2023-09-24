@@ -6,13 +6,14 @@
 
 
 // TODO: optimize size?
+// TODO: fix these names
 enum tile_e 
 {
    TreeTile,
    MountainTile,
    TallGrass,
    Clearing,
-   // Path,
+   Path,
    Water,
    TileCount,
 };
