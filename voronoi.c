@@ -2,6 +2,22 @@
 #include "voronoi.h"
 #include "tiles.h"
 
+ struct tile_s pokemonCenter = 
+{
+ .name = "center",
+ .ascii = 'C',
+ //.tile_idx = Center,
+ .adjacency = {0.f},
+};
+
+struct tile_s pokeMart = 
+{
+   .name = "mart",
+   .ascii = 'M',
+   .adjacency = {0.f},
+};
+
+
 static inline double distance(int x, int y, int x2, int y2)
 {
     return sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));

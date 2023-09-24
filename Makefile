@@ -3,14 +3,13 @@ CC = gcc
 ECHO = echo
 RM = rm -f
 
-CFLAGS = -Wall -Werror  -ggdb -funroll-loops
+CFLAGS = -Wall -Werror -ggdb -funroll-loops
 # CXXFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
 
 LDFLAGS = -lm
 
 BIN = worldgen
-OBJS = voronoi.o worldgen.o
-
+OBJS = voronoi.o dijkstra.o characters.o worldgen.o
 all: $(BIN) etags
 
 $(BIN): $(OBJS)

@@ -4,6 +4,7 @@
 #include <assert.h>
 #include "worldgen.h"
 #include "voronoi.h"
+#include "characters.h"
 
 void print_map(terrain_map_t *map) // TODO: take grid not map
 {
@@ -34,6 +35,9 @@ void print_map(terrain_map_t *map) // TODO: take grid not map
                     break;
                 case 'M':
                     color = LBLUE;
+                    break;
+                case '@': 
+                    color = WHITE;
                     break;
                 default:
                     // unreachable
@@ -118,6 +122,8 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
 
 int main(void)
 {
+    (void)tiles[TileCount];
+    (void)pathTile;
     srand(time(NULL));
     terrain_map_t* worldMap[WORLD_HEIGHT][WORLD_WIDTH];
 
@@ -132,6 +138,7 @@ int main(void)
     currGrid->location = currLoc;
     Gates_t gates = {0};
     generate_voronoi_map(currGrid, gates);
+    place_character(currGrid);
     worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
