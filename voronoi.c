@@ -6,7 +6,7 @@
 {
  .name = "center",
  .ascii = 'C',
- //.tile_idx = Center,
+ .tile_idx = PokeCenter,
  .adjacency = {0.f},
 };
 
@@ -14,6 +14,7 @@ struct tile_s pokeMart =
 {
    .name = "mart",
    .ascii = 'M',
+   .tile_idx = PokeMart,
    .adjacency = {0.f},
 };
 
@@ -61,7 +62,7 @@ void generate_voronoi_seeds(Seed_t* seeds)
     for(int i = 0; i < SEED_NUM; i++) {
         seeds[i].loc.x = 1 + (rand() % (GRID_HEIGHT - 1));
         seeds[i].loc.y = 1 + (rand() % (GRID_WIDTH - 1));
-        seeds[i].tile = tiles[i % TileCount]->ascii;
+        seeds[i].tile = tiles[i % (TileCount-1)]->ascii;
     }
     // TODO: choose seed at random instead of this distribution
 }

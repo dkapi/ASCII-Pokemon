@@ -25,17 +25,61 @@ uint32_t pc_cost(struct tile_s tile)
 {
 	switch(tile.tile_idx) {
 		case Path:
+    case PokeCenter:
+    case PokeMart:
+    case Clearing:
 			return 10;
 		case TreeTile:
+    case MountainTile:
+    case Water:
 			return INT32_MAX;
 		default:
 			// should not reach here
 			return INT32_MAX;
   	}
-
 }
 
+uint32_t hiker_cost(struct tile_s tile)
+{
+  switch(tile.tile_idx) {
+    case Path: 
+    case Clearing:
+      return 10;
+    case PokeCenter:
+    case PokeMart:
+      return 50;
+    case MountainTile:
+    case TreeTile:
+    case TallGrass:
+      return 15;
+    case Water:
+    return INT32_MAX;
+    default:
+      // should not reach here
+      return INT32_MAX;
+  }
+}
 
+uint32_t rival_cost(struct tile_s tile)
+{
+  switch(tile.tile_idx){
+    case Path: 
+    case Clearing:
+      return 10;
+    case PokeCenter:
+    case PokeMart:
+      return 50;
+      case TallGrass:
+      return 20;
+    case MountainTile:
+    case TreeTile:
+    case Water:
+    return INT32_MAX;
+    default:
+      // should not reach here
+      return INT32_MAX;
+  }    
+}
 
 Location_t  place_character(terrain_map_t *map)
 {

@@ -16,6 +16,8 @@ enum tile_e
    Path,
    Water,
    TileCount,
+   PokeMart,
+   PokeCenter,
 };
 
 struct tile_s
@@ -62,7 +64,7 @@ static struct tile_s pathTile =
 {
     .name = "path",
     .ascii = '#',
-    // .tile_idx = Path,
+    .tile_idx = Path,
     .adjacency = {0.f},
 };
 
@@ -85,7 +87,6 @@ static const struct tile_s* tiles[TileCount] =
    &mountainTile,
    &tallGrassTile,
    &clearingTile,
-   // &path,
    &waterTile,   
 };
 

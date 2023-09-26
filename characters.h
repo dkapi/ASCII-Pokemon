@@ -8,16 +8,16 @@ struct character_s {
     struct tile_s *tile;
     const char ascii;
     Location_t location;
-    uint8_t (*cost)(struct tile_s);  // func pointer accessed ex pc.cost(tile)
+    uint32_t (*cost)(struct tile_s);  // func pointer accessed ex pc.cost(tile)
 };
 
 extern struct character_s pc;
 
 void find_loco_to_place(terrain_map_t *map, Location_t *l);
 
-uint8_t pc_cost(struct tile_s tile);
-uint8_t hiker_cost(struct tile_s tile );
-uint8_t rival_cost(struct tile_s tile );
+uint32_t pc_cost(struct tile_s tile);
+uint32_t hiker_cost(struct tile_s tile );
+uint32_t rival_cost(struct tile_s tile );
 
 Location_t place_character(terrain_map_t *map);
 

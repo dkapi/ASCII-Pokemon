@@ -144,9 +144,12 @@ int main(void)
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
     printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
-    dijkstra_node_t* dNode[GRID_WIDTH][GRID_HEIGHT], dn;
-    dijkstra_map(currGrid, &PC, dNode, &dn);
-    print_dijkstra_map(dNode);
+    
+    dijk_map_t *dNode[GRID_WIDTH][GRID_HEIGHT], *dn;
+    struct character_s hiker;
+    
+    dijkstra_map(currGrid, &PC, dNode, dn, &hiker);
+
 
     char userInput[32];
     bool shouldQuit = false;
