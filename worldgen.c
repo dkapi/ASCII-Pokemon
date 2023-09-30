@@ -145,10 +145,13 @@ int main(void)
     print_map(worldMap[currLoc.x][currLoc.y]);
     printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
     
-    dijk_map_t *dNode[GRID_WIDTH][GRID_HEIGHT], *dn;
-    struct character_s hiker;
-    
+    //printing hiker cost map
+    printf("\n");
+    static dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH];
+    dijk_map_t *dn = (dijk_map_t *)malloc(sizeof(dijk_map_t));
+    struct character_s hiker = {.ascii = 'H', .location = {.x = 0, .y = 0}, .tile =  MountainTile, .cost = hiker_cost};
     dijkstra_map(currGrid, &PC, dNode, dn, &hiker);
+    print_dijkstra_map(dNode);
 
 
     char userInput[32];

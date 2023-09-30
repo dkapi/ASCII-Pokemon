@@ -7,20 +7,20 @@
 
 
 // TODO: use heapnodes like ur prof
-typedef struct dijk_map_node
+typedef struct dijk_map_t
 {
-    Location_t *from, *pos, *prev;
-    struct queue_node *next;
-    int distance, cost;
+     Location_t pos;
+   // struct queue_node *next;
+    uint32_t cost;
     int visited;
     heap_node_t *hn;
 }dijk_map_t;
 
 void dijkstra_map(terrain_map_t *map, Location_t *start, 
-                dijk_map_t *dNode[GRID_WIDTH][GRID_HEIGHT],
+                dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH],
                 dijk_map_t *dn, struct character_s *npc);
 
-void print_dijkstra_map(dijk_map_t *dNode[GRID_WIDTH][GRID_HEIGHT]);
+void print_dijkstra_map(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]);
 
 /*
 
