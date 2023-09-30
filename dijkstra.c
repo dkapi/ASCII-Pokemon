@@ -62,7 +62,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
             dNode[i][j]->hn = heap_insert(&h, &dNode[i][j]);
         }
     }
-
+    // okay issue i think is that i dont need dn? and i dont even know wtf im doing with it because its not initialized in main LOL
     while (h.size > 0) {
         dijk_map_t *dn = (dijk_map_t *)heap_remove_min(&h);
         if (dn->cost == INT32_MAX) {
@@ -71,17 +71,20 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
     }
     //mark currnode as visited
     dn->visited = 1;
+    int dx, dy, neighborX, neighborY;
 
-    for(int dx = -1; dx <= 1; dx++) {
-        for(int dy = -1; dy <= 1; dy++){
-            int neighborX = dn->pos.x + dx;
-            int neighborY = dn->pos.y + dy;
+    for(dx = -1; dx <= 1; dx++) {
+        for(dy = -1; dy <= 1; dy++){
+            // these values are somehow uninitialized in the if jumps below?
+            neighborX = dn->pos.x + dx;
+            neighborY = dn->pos.y + dy;
 
             if(neighborX >= 0 && neighborY <GRID_HEIGHT &&
                neighborY >= 0 && neighborY <GRID_WIDTH){
                 dijk_map_t **neighbor = &dNode[neighborX][neighborY];
                 // ik this shit wrong, but need to fix other stuff before code compiles to this line
-                int newCost = dn->cost + npc->cost;
+                // this npc->cost is why currently cost map is filled with 47
+                uint32_t newCost = dn->cost + npc->cost;
 
                 if(newCost < (*neighbor)->cost) {
                     (*neighbor)->cost = newCost;
@@ -90,12 +93,6 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
             }
         }
     }
-    // free dNode, idk if i need this here since i want to keep dNode values?
-    for (i = 0; i < GRID_HEIGHT; i++) {
-    for (j = 0; j < GRID_WIDTH; j++) {
-        free(dNode[i][j]);
-    }
-}
 }
 
 
@@ -115,15 +112,14 @@ void print_dijkstra_map(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]) {
     }
 }
 
-// void dijkstra_free(dijk_map_t dNode[GRID_WIDTH][GRID_HEIGHT]) {
-//     (void) pathTile;
-//     (void) tiles[TileCount];
+void dijkstra_free(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]) {
+    (void) pathTile;
+    (void) tiles[TileCount];
 
-//     for (int i = 0; i < GRID_WIDTH; i++) {
-//         for (int j = 0; j < GRID_HEIGHT; j++) {
-//             free(dNode[i][j].pos.x);
-//             free(dNode[i][j].prev);
-//         }
-//     }
-// }
+    for (int i = 0; i < GRID_HEIGHT; i++) {
+        for (int j = 0; j < GRID_WIDTH; j++) {
+            free(dNode[i][j]);
+        }
+    }
+}
 

@@ -152,6 +152,8 @@ int main(void)
     struct character_s hiker = {.ascii = 'H', .location = {.x = 0, .y = 0}, .tile =  MountainTile, .cost = hiker_cost};
     dijkstra_map(currGrid, &PC, dNode, dn, &hiker);
     print_dijkstra_map(dNode);
+    dijkstra_free(dNode);
+    
 
 
     char userInput[32];
