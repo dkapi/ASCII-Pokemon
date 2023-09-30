@@ -18,10 +18,11 @@ static int32_t cost_cmp(const void *key, const void *with) {
 //     return x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
 // }
 
-void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH], dijk_map_t *dn, struct character_s *npc)
+void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH], struct character_s *npc)
 {   
     int i, j;
     static uint32_t initialized = 0;
+    dijk_map_t *dn = (dijk_map_t *)malloc(sizeof(dijk_map_t));
     heap_t h;
 
     //allocate mem for Dnode
@@ -64,7 +65,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
     }
     // okay issue i think is that i dont need dn? and i dont even know wtf im doing with it because its not initialized in main LOL
     while (h.size > 0) {
-        dijk_map_t *dn = (dijk_map_t *)heap_remove_min(&h);
+        dn = (dijk_map_t *)heap_remove_min(&h);
         if (dn->cost == INT32_MAX) {
             break;
         }
@@ -93,6 +94,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
             }
         }
     }
+    free(dn);
 }
 
 

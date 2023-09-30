@@ -18,7 +18,7 @@ typedef struct dijk_map_t
 
 void dijkstra_map(terrain_map_t *map, Location_t *start, 
                 dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH],
-                dijk_map_t *dn, struct character_s *npc);
+                struct character_s *npc);
 void print_dijkstra_map(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]);
 void dijkstra_free(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]);
 
