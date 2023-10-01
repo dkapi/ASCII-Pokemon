@@ -43,13 +43,17 @@ uint32_t hiker_cost(struct tile_s tile)
 {
   switch(tile.tile_idx) {
     case Path: 
+      return 10;
     case Clearing:
       return 10;
     case PokeCenter:
+      return 50;
     case PokeMart:
       return 50;
     case MountainTile:
+      return 15;
     case TreeTile:
+      return 15;
     case TallGrass:
       return 15;
     case Water:

@@ -6,7 +6,7 @@
 #include "characters.h"
 
 
-// TODO: use heapnodes like ur prof
+
 typedef struct dijk_map_t
 {
      Location_t pos;

@@ -8,6 +8,12 @@
 static int32_t character_cost_cmp(const void *key, const void *with) {
     struct character_s * k = (struct character_s*)key;
     struct character_s * w = (struct character_s*)with;
+
+    if( k == NULL || k->cost == NULL || k->tile == NULL ||
+        w == NULL || w->cost == NULL || w->tile == NULL) {
+            return 0;
+        }
+
     return k->cost(*k->tile) - w->cost(*w->tile);
 }
 
@@ -30,6 +36,10 @@ struct tile_s* char_to_tile_s(char terrain){
             return &pokeMart;
         case '#':
             return &pathTile;
+        case '@':
+        // for now this is pathtile because
+        // the PC is stationary on path
+            return &pathTile;
         default:
         // unreachable
         fprintf(stderr, "something went wrong in char_to_tile_s func");
@@ -39,10 +49,17 @@ struct tile_s* char_to_tile_s(char terrain){
 
 void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH], struct character_s *npc)
 {   
-    int i, j;
+    int i = 0; 
+    int j = 0;
     static uint32_t initialized = 0;
     dijk_map_t *dn = (dijk_map_t *)malloc(sizeof(dijk_map_t));
     heap_t h;
+
+    for(i =0; i < GRID_HEIGHT; i++) {
+        for(j =0; j< GRID_WIDTH; j++){
+            dNode[i][j] =NULL;
+        }
+    }
 
     //allocate mem for Dnode
     for (i = 0; i < GRID_HEIGHT; i++) {
@@ -56,10 +73,8 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
     if (!initialized) {
         for (i = 0; i < GRID_HEIGHT; i++) {
             for (j = 0; j < GRID_WIDTH; j++) {
-                // still failing (seg fault line 32)
                 dNode[i][j]->pos.x = i;
                 dNode[i][j]->pos.y = j;
-                dNode[i][j]->tile =0;
                 dNode[i][j]->tile = char_to_tile_s(map->grid[i][j]);
             }
         }
@@ -74,7 +89,10 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
     // setting cost of player loco to zero
     dNode[start->x][start->y]->cost = 0;
 
+   
     heap_init(&h, character_cost_cmp, NULL);
+                printf("this is shit about dNode[0][0]:\n cost = %d\n posx = %d \n posy = %d"
+             ,dNode[0][0]->cost, dNode[0][0]->pos.x, dNode[0][0]->pos.y);
 
     for (i =1; i < GRID_HEIGHT; i++) {
         for( j =1; j < GRID_WIDTH; j++) {
