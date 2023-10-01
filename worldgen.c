@@ -148,7 +148,7 @@ int main(void)
     //printing hiker cost map
     printf("\n");
     static dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH];
-    struct character_s hiker = {.ascii = 'H', .location = {.x = 0, .y = 0}, .tile =  MountainTile, .cost = hiker_cost};
+    struct character_s hiker = {.ascii = 'H', .location = {.x = 0, .y = 0}, .tile =  &mountainTile, .cost = hiker_cost};
     dijkstra_map(currGrid, &PC, dNode, &hiker);
     print_dijkstra_map(dNode);
     dijkstra_free(dNode);

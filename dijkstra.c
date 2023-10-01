@@ -5,18 +5,37 @@
 
 
 //compares cost as apposed to sheaffers height map compare
-static int32_t cost_cmp(const void *key, const void *with) {
-  return ((struct character_s *)key)->cost - ((struct character_s * )with)-> cost;
+static int32_t character_cost_cmp(const void *key, const void *with) {
+    struct character_s * k = (struct character_s*)key;
+    struct character_s * w = (struct character_s*)with;
+    return k->cost(*k->tile) - w->cost(*w->tile);
 }
 
-// static int32_t edge_penalty(int8_t x, int8_t y)
-// {
-//   return (x == 1 || y == 1 || x == GRID_WIDTH - 2 || y == GRID_HEIGHT - 2) ? 2 : 1;
-// }
+struct tile_s* char_to_tile_s(char terrain){
 
-// static int32_t isValid(int8_t x, int8_t y) {
-//     return x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
-// }
+    switch(terrain){
+        case ':':
+            return &tallGrassTile;
+        case '^': 
+            return &treeTile;
+        case '~':
+            return &waterTile;
+        case '%':
+            return &mountainTile;
+        case '.':
+            return &clearingTile;
+        case 'C':
+            return &pokemonCenter;
+        case 'M':
+            return &pokeMart;
+        case '#':
+            return &pathTile;
+        default:
+        // unreachable
+        fprintf(stderr, "something went wrong in char_to_tile_s func");
+        return &pathTile;
+    } 
+}
 
 void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH], struct character_s *npc)
 {   
@@ -39,10 +58,9 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
             for (j = 0; j < GRID_WIDTH; j++) {
                 // still failing (seg fault line 32)
                 dNode[i][j]->pos.x = i;
-                dNode[i][j]->pos.x = j;
-                //dNode[i][j]->pos = newLoc;
-                dNode[i][j]->visited =0;
-                //dNode[i][j]->hn = NULL;
+                dNode[i][j]->pos.y = j;
+                dNode[i][j]->tile =0;
+                dNode[i][j]->tile = char_to_tile_s(map->grid[i][j]);
             }
         }
         initialized =1;
@@ -56,7 +74,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
     // setting cost of player loco to zero
     dNode[start->x][start->y]->cost = 0;
 
-    heap_init(&h, cost_cmp, NULL);
+    heap_init(&h, character_cost_cmp, NULL);
 
     for (i =1; i < GRID_HEIGHT; i++) {
         for( j =1; j < GRID_WIDTH; j++) {
@@ -97,9 +115,6 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
     free(dn);
 }
 
-
-
-
 void print_dijkstra_map(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]) {
     int i, j;
     for (i = 0; i < GRID_HEIGHT; i++) {
@@ -117,11 +132,12 @@ void print_dijkstra_map(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]) {
 void dijkstra_free(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]) {
     (void) pathTile;
     (void) tiles[TileCount];
-
-    for (int i = 0; i < GRID_HEIGHT; i++) {
-        for (int j = 0; j < GRID_WIDTH; j++) {
+    
+    for (int i = 0; i< GRID_HEIGHT; i++) {
+        for (int j =0; j < GRID_WIDTH; j++) {
             free(dNode[i][j]);
         }
     }
 }
+
 

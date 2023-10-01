@@ -10,10 +10,10 @@
 typedef struct dijk_map_t
 {
      Location_t pos;
-   // struct queue_node *next;
     uint32_t cost;
     int visited;
     heap_node_t *hn;
+    struct tile_s *tile;
 }dijk_map_t;
 
 void dijkstra_map(terrain_map_t *map, Location_t *start, 
@@ -21,6 +21,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start,
                 struct character_s *npc);
 void print_dijkstra_map(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]);
 void dijkstra_free(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]);
+
 
 /*
 

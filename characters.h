@@ -5,9 +5,9 @@
 #include "tiles.h"
 
 struct character_s {
-    struct tile_s *tile;
     const char ascii;
     Location_t location;
+    struct tile_s *tile;
     uint32_t (*cost)(struct tile_s);  // func pointer accessed ex pc.cost(tile)
 };
 
