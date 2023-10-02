@@ -80,7 +80,6 @@ extern struct tile_s pokemonCenter;
 extern struct tile_s pokeMart;
 
 
-// important to keep in the order you defined in the enum
 static const struct tile_s* tiles[TileCount] =
 {
    &treeTile,

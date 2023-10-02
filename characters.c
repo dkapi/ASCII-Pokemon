@@ -66,19 +66,23 @@ uint32_t hiker_cost(struct tile_s tile)
 
 uint32_t rival_cost(struct tile_s tile)
 {
-  switch(tile.tile_idx){
-    case Path: 
-    case Clearing:
+  switch(tile.ascii){
+    case '#':
+      return 10; 
+    case '.':
       return 10;
-    case PokeCenter:
-    case PokeMart:
+    case 'C':
       return 50;
-      case TallGrass:
+    case 'M':
+      return 50;
+      case ':':
       return 20;
-    case MountainTile:
-    case TreeTile:
-    case Water:
-    return INT32_MAX;
+    case '%':
+      return INT32_MAX;
+    case '^':
+      return INT32_MAX;
+    case '~':
+      return INT32_MAX;
     default:
       // should not reach here
       return INT32_MAX;
