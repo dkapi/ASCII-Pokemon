@@ -6,15 +6,13 @@
 
 //compares cost as apposed to sheaffers height map compare
 static int32_t character_cost_cmp(const void *key, const void *with) {
-    struct character_s * k = (struct character_s*)key;
-    struct character_s * w = (struct character_s*)with;
+    dijk_map_t * k = (dijk_map_t*)key;
+    dijk_map_t * w = (dijk_map_t*)with;
 
-    if( k == NULL || k->cost == NULL || k->tile == NULL ||
-        w == NULL || w->cost == NULL || w->tile == NULL) {
-            return 0;
-        }
+    uint32_t cost_k = k->npc->cost(*k->tile);
+    uint32_t cost_w = w->npc->cost(*w->tile);
 
-    return k->cost(*k->tile) - w->cost(*w->tile);
+    return cost_k - cost_w;
 }
 
 struct tile_s* char_to_tile_s(char terrain){
@@ -76,6 +74,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
                 dNode[i][j]->pos.x = i;
                 dNode[i][j]->pos.y = j;
                 dNode[i][j]->tile = char_to_tile_s(map->grid[i][j]);
+                dNode[i][j]->npc = npc;
             }
         }
         initialized =1;
@@ -91,12 +90,12 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
 
    
     heap_init(&h, character_cost_cmp, NULL);
-                printf("this is shit about dNode[0][0]:\n cost = %d\n posx = %d \n posy = %d"
-             ,dNode[0][0]->cost, dNode[0][0]->pos.x, dNode[0][0]->pos.y);
+            //     printf("this is shit about dNode[0][0]:\n cost = %d\n posx = %d \n posy = %d"
+            //  ,dNode[0][0]->cost, dNode[0][0]->pos.x, dNode[0][0]->pos.y);
 
     for (i =1; i < GRID_HEIGHT; i++) {
         for( j =1; j < GRID_WIDTH; j++) {
-            dNode[i][j]->hn = heap_insert(&h, &dNode[i][j]);
+            dNode[i][j]->hn = heap_insert(&h, dNode[i][j]);
         }
     }
     // okay issue i think is that i dont need dn? and i dont even know wtf im doing with it because its not initialized in main LOL
@@ -108,7 +107,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
     }
     //mark currnode as visited
     dn->visited = 1;
-    int dx, dy, neighborX, neighborY;
+    int dx= 0, dy= 0, neighborX =0, neighborY = 0;
 
     for(dx = -1; dx <= 1; dx++) {
         for(dy = -1; dy <= 1; dy++){
@@ -121,7 +120,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
                 dijk_map_t **neighbor = &dNode[neighborX][neighborY];
                 // ik this shit wrong, but need to fix other stuff before code compiles to this line
                 // this npc->cost is why currently cost map is filled with 47
-                uint32_t newCost = dn->cost + npc->cost;
+                uint32_t newCost = dn->cost + npc->cost(*dn->tile);
 
                 if(newCost < (*neighbor)->cost) {
                     (*neighbor)->cost = newCost;
@@ -130,7 +129,6 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t *dNode[GRID_
             }
         }
     }
-    free(dn);
 }
 
 void print_dijkstra_map(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]) {
@@ -138,7 +136,7 @@ void print_dijkstra_map(dijk_map_t *dNode[GRID_HEIGHT][GRID_WIDTH]) {
     for (i = 0; i < GRID_HEIGHT; i++) {
         for (j = 0; j < GRID_WIDTH; j++) {
             if (dNode[i][j]->cost < 10) {
-                printf(" %2d ", dNode[i][j]->cost % 100);
+                printf(" %2d ", dNode[i][j]->cost);
             } else {
                 printf("%2d ", dNode[i][j]->cost % 100);
             }

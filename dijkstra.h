@@ -13,7 +13,8 @@ typedef struct dijk_map_t
     uint32_t cost;
     int visited;
     heap_node_t *hn;
-    struct tile_s *tile;
+     struct tile_s *tile;
+    struct character_s *npc;
 }dijk_map_t;
 
 void dijkstra_map(terrain_map_t *map, Location_t *start, 
