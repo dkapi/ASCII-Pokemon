@@ -1,50 +1,257 @@
-09/02 16:54: added initial tile header, and worldgen file
+commit 62b3b0fa0a12ea0d147d5c466a754c2c70abafa3
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Mon Oct 2 02:46:42 2023 -0500
 
-09/02 17:23: added init_world def
+    printing cost map, sometimes crashes still but good so far
 
-09/03 12:11: added path tile to tile.h, added Makefile, and added init_world
-             functionality
+commit c4071e936fd38b3e70567efe265c6be77bf2fc05
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sun Oct 1 21:44:58 2023 -0500
 
-09/05 15:44: added seed_gen and colo for basic setup of worldgen prep
+    costs are not working
 
-09/06 18:23: update/added heper functions, and added main function for voronoi
-             worldgen
+commit 86ef0fd1b9970cbb2b66a231f0252b5e6e4bc9a8
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sun Oct 1 16:48:07 2023 -0500
 
-09/06 18:54: added color to the worldgen
+    need help
 
-09/06 19:22: added more seeds to see if it fixed large biome issues
+commit 5056ad55b4d9361d2202af44a167889efbddd25e
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sat Sep 30 21:11:46 2023 -0500
 
-09/06 20:00: fixe seed placement issues
+    dijkstra map errors still :)
 
-09/07 13:30: added gates to border to prep for path generation
+commit 3464784b342310ef7ed238fae716a9edd7c97c2d
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sat Sep 30 14:25:11 2023 -0500
 
-09/08 17:42: added path generation
+    removed dn from map parameters, because it didnt make sense to have it there i think
 
-09/08 20:03: partially working building spawn, alot of bugs in spawning
+commit 53f75fc67626314a049961dcd8585094dda2bde8
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sat Sep 30 13:07:07 2023 -0500
 
-09/09 16:37: mosting working pokemon center spawning and pokemon mart 
-            spawing.
+    closer to dijkstra working
 
-09/09 18:14: fixed some edge cases in the bugs, still havnt got border
-             checking to work, so sometimes buildings spawn on border 
-             or on top of path depending on where the path spawns.
+commit 54f89e9cfc1ee2b52ea54cf972b3d6ba28befdb6
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Fri Sep 29 21:44:14 2023 -0500
 
-09/09 20:48 still cant get all bounds to work, fixed a few seg fault crashes
+    printable cost map most of the time, sometimes segs still.
 
-09/14 15:32: created assignmen2 branch
+commit c00ef78de58a9db456f997a4f739eb68bde6285e
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Mon Sep 25 20:34:50 2023 -0500
 
-09/15 18:20: fixed some bugs with spawing
+     some work on dijkstras
 
-09/16 14:12: converted most stuff to structs and prepped worldMap grid
 
-09/16 16:53: fixed seg fault on world map
+commit 1dd85f466f6a4f50aa156c34f10267d93448452d
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sun Sep 24 12:29:45 2023 -0500
 
-09/17 12:42: did some refractoring
+    its seg faulting now
 
-09/17 13:28 most of grid traversal complete, fly still has bugs
+commit 632e5b2cbc4a9743ffa340f83854b657fbcde9da
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sun Sep 24 02:37:51 2023 -0500
 
-09/17 15:03 user input complete
+    dijkstra map still dont work
 
-09/17 18:49: fixed building spawing.
+commit a42dc79e7d2c310f776f26936a4a122cfb99145d
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sat Sep 23 22:19:29 2023 -0500
 
-09/17 20:13: bugfixes
+    missed a few adds
+
+commit 449f72c7e21281f94e7aa119c5ee0ca0c0305412
+Author: dkapi <dinokapic39@gmail.com>
+Date:   Sat Sep 23 22:17:29 2023 -0500
+
+    added player spawn on starting map, prep for dijkstras
+
+
+commit 4083ba97a91d85667b526b83d4d94cc379444284
+Author: Dino Kapic <125070291+dkapi@users.noreply.github.com>
+Date:   Sat Sep 23 15:12:04 2023 -0500
+
+    Assignment02-worldmap & partial userinput/traversal (#2)
+    
+    * adding initial tile header, and worldgen file
+    
+    * restructure struct defs
+    
+    * add init_world def and fix loop
+    
+    * fix width and height to appropriate values
+    
+    * fix width and height to appropriate values
+    
+    * fix missing member names, and remove binary
+    
+    * init world and remove buffer file
+    
+    * outline for wave function collapse algorythm
+    
+    * better outline for wfc
+    
+    * add better documentation
+    
+    * added path tile to tiles.h, added Makefile, and added
+    init_world functionality
+    
+    * added seed_gen and color for basic setup of worldgen prep
+    
+    * update/added helper functions, and added main function for voronoi worldgenning
+    
+    * added color to the worldgen
+    
+    * adding more seeds to see if it fixed large biome issues
+    
+    * fix seed placement, and a bit of tile placement
+    
+    * remove binary again
+    
+    * added gates to border to prep for path generation
+    
+    * start of stack header
+    
+    * added path generation
+    
+    * fix path generation/inconsistent tile names
+    
+    * fix loop desc
+    
+    * fix tree spawn chance check
+    
+    * partially working building spawn, hella bugs GG
+    
+    * attemping building generation
+    
+    * mostly working pokemon center spwaning
+    
+    * attempt to make marts spawn
+    
+    * made mart spawing worse somehow
+    
+    * mostly working pokemart spwaning TODO bounds checking
+    
+    * fix certain edge cases
+    
+    * new branch for assignment02 initialized
+    
+    * removed binary file
+    
+    * converted most of stuff to structs and prepped for worldMap grid
+    
+    * fixed seg fault on worldMap
+    
+    * refactoring
+    
+    * added TODO and removed unused signature
+    
+    * most of grid traversal complete, fly still bugged
+    
+    * user input handling with multi grids
+    
+    * fixed gates?
+    
+    * fixing building spawn
+    
+    * fixed building spawning, and added distance probability
+    
+    * deleted non needed files
+    
+    * buildng fixed, flyin not fixed
+    
+    * almost fixed fly bug
+    
+    * fix fly bounds (error is if both x and y are at least 2 digits)
+    
+    * spacing
+    
+    * fixed crashing when moving past world edges
+    
+    * fixed gates not being blocked in certain cases when at the world border
+    
+    * fixed border gates not being blocked on edges in certain cases
+    
+    ---------
+
+commit 73371db02c59f7963ce49af7bcd5ed0a40c3850a
+Author: Dino Kapic <125070291+dkapi@users.noreply.github.com>
+Date:   Mon Sep 11 10:17:23 2023 -0500
+
+    Worldgen (#1)
+    
+    * adding initial tile header, and worldgen file
+    
+    * restructure struct defs
+    
+    * add init_world def and fix loop
+    
+    * fix width and height to appropriate values
+    
+    * fix width and height to appropriate values
+    
+    * fix missing member names, and remove binary
+    
+    * init world and remove buffer file
+    
+    * outline for wave function collapse algorythm
+    
+    * better outline for wfc
+    
+    * add better documentation
+    
+    * added path tile to tiles.h, added Makefile, and added
+    init_world functionality
+    
+    * added seed_gen and color for basic setup of worldgen prep
+    
+    * update/added helper functions, and added main function for voronoi worldgenning
+    
+    * added color to the worldgen
+    
+    * adding more seeds to see if it fixed large biome issues
+    
+    * fix seed placement, and a bit of tile placement
+    
+    * remove binary again
+    
+    * added gates to border to prep for path generation
+    
+    * start of stack header
+    
+    * added path generation
+    
+    * fix path generation/inconsistent tile names
+    
+    * fix loop desc
+    
+    * fix tree spawn chance check
+    
+    * partially working building spawn, hella bugs GG
+    
+    * attemping building generation
+    
+    * mostly working pokemon center spwaning
+    
+    * attempt to make marts spawn
+    
+    * made mart spawing worse somehow
+    
+    * mostly working pokemart spwaning TODO bounds checking
+    
+    * fix certain edge cases
+    
+    * fix position 3 pokemon center left bounds spawn
+    
+    ---------
+
+commit 6bfc8af22cc703b94c9c9c75ba7379731924ff6a
+Author: Dino Kapic <125070291+dkapi@users.noreply.github.com>
+Date:   Sat Sep 2 14:12:28 2023 -0500
+
+    Initial commit

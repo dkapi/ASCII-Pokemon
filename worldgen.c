@@ -144,23 +144,21 @@ int main(void)
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
     printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
-    
+
+    //printing hiker cost map    
     printf("\n hiker cost map\n");
-    static dijk_map_t *hikerNode[GRID_HEIGHT][GRID_WIDTH];
+    static dijk_map_t hikerCostMap[GRID_HEIGHT][GRID_WIDTH];
     struct character_s hiker = {.ascii = 'H', .location = {.x = 0, .y = 0}, .tile =  &mountainTile, .cost = hiker_cost};
-    dijkstra_map(currGrid, &PC, hikerNode, &hiker);
-    print_dijkstra_map(hikerNode);
-    dijkstra_free(hikerNode);
+    dijkstra_map(currGrid, &PC, hikerCostMap, &hiker);
+    print_dijkstra_map(hikerCostMap);
 
-    // these wont print together at same time, so to look at Rival map, uncomment 157-163, and comment 148-153
 
-    // //printing Rival cost map
-    // printf("\nrival cost map\n");
-    // static dijk_map_t *rivalNode[GRID_HEIGHT][GRID_WIDTH];
-    // struct character_s rival = {.ascii = 'R', .location = {.x = 0, .y = 0}, .tile =  &clearingTile, .cost = rival_cost};
-    // dijkstra_map(currGrid, &PC, rivalNode, &rival);
-    // print_dijkstra_map(rivalNode);
-    // dijkstra_free(rivalNode);
+    //printing Rival cost map
+    printf("\nrival cost map\n");
+    static dijk_map_t rivalCostMap[GRID_HEIGHT][GRID_WIDTH];
+    struct character_s rival = {.ascii = 'R', .location = {.x = 0, .y = 0}, .tile =  &clearingTile, .cost = rival_cost};
+    dijkstra_map(currGrid, &PC, rivalCostMap, &rival);
+    print_dijkstra_map(rivalCostMap);
     
 
 
