@@ -2,6 +2,23 @@
 #include "voronoi.h"
 #include "tiles.h"
 
+ struct tile_s pokemonCenter = 
+{
+ .name = "center",
+ .ascii = 'C',
+ .tile_idx = PokeCenter,
+ .adjacency = {0.f},
+};
+
+struct tile_s pokeMart = 
+{
+   .name = "mart",
+   .ascii = 'M',
+   .tile_idx = PokeMart,
+   .adjacency = {0.f},
+};
+
+
 static inline double distance(int x, int y, int x2, int y2)
 {
     return sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
@@ -45,7 +62,7 @@ void generate_voronoi_seeds(Seed_t* seeds)
     for(int i = 0; i < SEED_NUM; i++) {
         seeds[i].loc.x = 1 + (rand() % (GRID_HEIGHT - 1));
         seeds[i].loc.y = 1 + (rand() % (GRID_WIDTH - 1));
-        seeds[i].tile = tiles[i % TileCount]->ascii;
+        seeds[i].tile = tiles[i % (TileCount-1)]->ascii;
     }
     // TODO: choose seed at random instead of this distribution
 }

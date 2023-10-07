@@ -6,15 +6,18 @@
 
 
 // TODO: optimize size?
+// TODO: fix these names
 enum tile_e 
 {
    TreeTile,
    MountainTile,
    TallGrass,
    Clearing,
-   // Path,
+   Path,
    Water,
    TileCount,
+   PokeMart,
+   PokeCenter,
 };
 
 struct tile_s
@@ -25,7 +28,7 @@ struct tile_s
    const float adjacency[TileCount];
 };
 
-static const struct tile_s treeTile = 
+static struct tile_s treeTile = 
 {
    .name = "tree",
    .ascii = '^',
@@ -33,7 +36,7 @@ static const struct tile_s treeTile =
    .adjacency = {0.f},
 };
 
-static const struct tile_s mountainTile = 
+static struct tile_s mountainTile = 
 {
    .name = "mountain",
    .ascii = '%',
@@ -41,7 +44,7 @@ static const struct tile_s mountainTile =
    .adjacency = {0.f},
 };
 
-static const struct tile_s tallGrassTile = 
+static struct tile_s tallGrassTile = 
 {
    .name = "tall-grass",
    .ascii = ':',
@@ -49,7 +52,7 @@ static const struct tile_s tallGrassTile =
    .adjacency = {0.f},
 };
 
-static const struct tile_s clearingTile = 
+static struct tile_s clearingTile = 
 {
    .name = "clearing",
    .ascii = '.',
@@ -57,15 +60,15 @@ static const struct tile_s clearingTile =
    .adjacency = {0.f},
 };
 
-static const struct tile_s pathTile =
+static struct tile_s pathTile =
 {
     .name = "path",
     .ascii = '#',
-    // .tile_idx = Path,
+    .tile_idx = Path,
     .adjacency = {0.f},
 };
 
-static const struct tile_s waterTile =
+static struct tile_s waterTile =
 {
     .name = "water",
     .ascii = '~',
@@ -73,30 +76,16 @@ static const struct tile_s waterTile =
     .adjacency = {0.f},
 };
 
-static struct tile_s pokemonCenter = 
-{
- .name = "center",
- .ascii = 'C',
- //.tile_idx = Center,
- .adjacency = {0.f},
-};
-
-static struct tile_s pokeMart = 
-{
-   .name = "mart",
-   .ascii = 'M',
-   .adjacency = {0.f},
-};
+extern struct tile_s pokemonCenter;
+extern struct tile_s pokeMart;
 
 
-// important to keep in the order you defined in the enum
 static const struct tile_s* tiles[TileCount] =
 {
    &treeTile,
    &mountainTile,
    &tallGrassTile,
    &clearingTile,
-   // &path,
    &waterTile,   
 };
 

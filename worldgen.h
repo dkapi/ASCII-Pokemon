@@ -9,7 +9,7 @@
 #define WORLD_HEIGHT 401
 #define WORLD_WIDTH 401
 #define WORLD_SIZE 401
-#define SEED_NUM 20
+#define SEED_NUM 18
 
 #define BLACK   "\e[0;30m"
 #define RED     "\e[0;31m"
@@ -41,6 +41,7 @@ typedef struct terrain_map
     char grid[GRID_HEIGHT][GRID_WIDTH];
     Location_t location;
     Gates_t gates;
+    int visited, cost, distance;
 } terrain_map_t;
 
 

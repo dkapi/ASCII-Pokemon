@@ -4,6 +4,8 @@
 #include <assert.h>
 #include "worldgen.h"
 #include "voronoi.h"
+#include "characters.h"
+#include "dijkstra.h"
 
 void print_map(terrain_map_t *map) // TODO: take grid not map
 {
@@ -34,6 +36,9 @@ void print_map(terrain_map_t *map) // TODO: take grid not map
                     break;
                 case 'M':
                     color = LBLUE;
+                    break;
+                case '@': 
+                    color = WHITE;
                     break;
                 default:
                     // unreachable
@@ -118,6 +123,8 @@ Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* 
 
 int main(void)
 {
+    (void)tiles[TileCount];
+    (void)pathTile;
     srand(time(NULL));
     terrain_map_t* worldMap[WORLD_HEIGHT][WORLD_WIDTH];
 
@@ -132,10 +139,27 @@ int main(void)
     currGrid->location = currLoc;
     Gates_t gates = {0};
     generate_voronoi_map(currGrid, gates);
+    Location_t PC = place_character(currGrid);
     worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
     printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
+
+    //printing hiker cost map    
+    printf("\n hiker cost map\n");
+    static dijk_map_t hikerCostMap[GRID_HEIGHT][GRID_WIDTH];
+    struct character_s hiker = {.ascii = 'H', .location = {.x = 0, .y = 0}, .tile =  &mountainTile, .cost = hiker_cost};
+    dijkstra_map(currGrid, &PC, hikerCostMap, &hiker);
+    print_dijkstra_map(hikerCostMap);
+
+
+    //printing Rival cost map
+    printf("\nrival cost map\n");
+    static dijk_map_t rivalCostMap[GRID_HEIGHT][GRID_WIDTH];
+    struct character_s rival = {.ascii = 'R', .location = {.x = 0, .y = 0}, .tile =  &clearingTile, .cost = rival_cost};
+    dijkstra_map(currGrid, &PC, rivalCostMap, &rival);
+    print_dijkstra_map(rivalCostMap);
+    
 
 
     char userInput[32];
@@ -169,6 +193,5 @@ int main(void)
             }
         }
     }
-
     return 0;
 }
