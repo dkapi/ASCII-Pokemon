@@ -75,6 +75,27 @@ void print_map(terrain_map_t *map) // TODO: take grid not map
     }
 }
 
+void null_world_map()
+{
+    for(int i = 0; i < WORLD_HEIGHT; ++i) {
+        for(int j = 0; j < WORLD_WIDTH; ++j) {
+            worldMap[i][j] = NULL;
+        }
+    }
+}
+
+void free_world_map()
+{
+    for(int i =0; i < WORLD_HEIGHT; i++) {
+        for(int j =0; j < WORLD_WIDTH; j++) {
+            if(worldMap[i][j]){
+            free(worldMap[i][j]);
+            worldMap[i][j] = NULL;
+            }
+        }
+    }
+}
+
 static inline void get_input(int n, char* buf)
 {
     fgets(buf, n, stdin);
@@ -164,6 +185,7 @@ void npc_movement_loop(terrain_map_t *currGrid, struct character_s npc_arr[])
     int dx, dy, neighborX, neighborY;
     heap_t h;
     
+    //this is main loop for npc movement, currently only way to exit is Ctrl + C
     for(;;){
         heap_init(&h, npc_cost_cmp, NULL);
         //enqueue all npcs
@@ -322,15 +344,11 @@ int main(int argc, char *argv[])
     (void)pathTile;
     srand(time(NULL));
 
-    for(int i = 0; i < WORLD_HEIGHT; ++i) {
-        for(int j = 0; j < WORLD_WIDTH; ++j) {
-            worldMap[i][j] = NULL;
-        }
-    }
+    null_world_map();
+
 
     //init_first_grid();
-
-        terrain_map_t* currGrid = (terrain_map_t*)malloc(sizeof(terrain_map_t));
+    terrain_map_t* currGrid = (terrain_map_t*)malloc(sizeof(terrain_map_t));
     Location_t currLoc = { .x = 200, .y = 200 };
     currGrid->location = currLoc;
     Gates_t gates = {0};
@@ -342,17 +360,15 @@ int main(int argc, char *argv[])
     print_map(worldMap[currLoc.x][currLoc.y]);
     printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
 
-
+    // create dijkstra cost maps for npc's that need em
     dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
     dijkstra_map(currGrid, &pc.location, rival.costMap, &rival);
 
-
+    // array to hold all the npc's that will spawn per Grid decided on the numTrainers flag, or default
     struct character_s npc_arr[] = {hiker, rival, pacer, wanderer, explorer};
-
+    // npc movement.
     npc_movement_loop(currGrid, npc_arr);
 
-
-    //make new func, pass currGrid to the new func so we dont have all this movement below in main.
 
 
     
@@ -380,13 +396,8 @@ int main(int argc, char *argv[])
     //     gates = currGrid->gates;
     //}
 
-    for(int i =0; i < WORLD_HEIGHT; i++) {
-        for(int j =0; j < WORLD_WIDTH; j++) {
-            if(worldMap[i][j]){
-            free(worldMap[i][j]);
-            worldMap[i][j] = NULL;
-            }
-        }
-    }
+    
+    free_world_map();
+
     return 0;
 }

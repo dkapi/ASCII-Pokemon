@@ -12,7 +12,6 @@
 #define WORLD_WIDTH 401
 #define WORLD_SIZE 401
 #define SEED_NUM 20
-#define NPC_NUM 2
 
 #define BLACK   "\e[0;30m"
 #define RED     "\e[0;31m"

@@ -203,7 +203,7 @@ uint32_t hiker_cost(struct tile_s tile)
     case ':':
       return 15;
     case '~':
-    return INT32_MAX;
+      return INT32_MAX;
     default:
       // should not reach here
       return INT32_MAX;
@@ -221,7 +221,7 @@ uint32_t rival_cost(struct tile_s tile)
       return 50;
     case 'M':
       return 50;
-      case ':':
+    case ':':
       return 20;
     case '%':
       return INT32_MAX;
@@ -246,7 +246,7 @@ uint32_t swimmer_cost(struct tile_s tile)
       return INT32_MAX;
     case 'M':
       return INT32_MAX;
-      case ':':
+    case ':':
       return INT32_MAX;
     case '%':
       return INT32_MAX;
@@ -306,8 +306,6 @@ struct tile_s* char_to_tile_s(char terrain){
         case '#':
             return &pathTile;
         case '@':
-        // for now this is pathtile because
-        // the PC is stationary on path
             return pc.tile;
         case 'h':
             return hiker.tile;
@@ -324,8 +322,7 @@ struct tile_s* char_to_tile_s(char terrain){
         default:
         // unreachable
         fprintf(stderr, "something went wrong in char_to_tile_s func: %c", terrain);
+        return &pathTile;
         
     } 
 }
-
-
