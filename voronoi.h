@@ -2,12 +2,14 @@
 #define _WORLDGEN_VORONOI_H
 
 #include "worldgen.h"
+#include "dijkstra.h"
 
 typedef struct Seed
 {
     Location_t loc;
     char tile;
 } Seed_t;
+
 
 void generate_voronoi_map(terrain_map_t *map, Gates_t gates);
 

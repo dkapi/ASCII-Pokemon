@@ -3,13 +3,16 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include "tiles.h"
 
-#define GRID_HEIGHT 24 - 3
+#define GRID_HEIGHT 24-3 
 #define GRID_WIDTH 80
 #define WORLD_HEIGHT 401
 #define WORLD_WIDTH 401
 #define WORLD_SIZE 401
-#define SEED_NUM 18
+#define SEED_NUM 20
+#define NPC_NUM 2
 
 #define BLACK   "\e[0;30m"
 #define RED     "\e[0;31m"
@@ -41,7 +44,6 @@ typedef struct terrain_map
     char grid[GRID_HEIGHT][GRID_WIDTH];
     Location_t location;
     Gates_t gates;
-    int visited, cost, distance;
 } terrain_map_t;
 
 

@@ -1,6 +1,9 @@
 #include <math.h>
 #include "voronoi.h"
 #include "tiles.h"
+#include "characters.h"
+
+#define distance(x1,y1,x2,y2) sqrt ((x - x2) * (x - x2) + (y -y2) *(y -y2))
 
  struct tile_s pokemonCenter = 
 {
@@ -18,11 +21,6 @@ struct tile_s pokeMart =
    .adjacency = {0.f},
 };
 
-
-static inline double distance(int x, int y, int x2, int y2)
-{
-    return sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
-}
 
 void generate_voronoi_map(terrain_map_t *map, Gates_t gates)
 {
@@ -85,7 +83,7 @@ void fill_vorinoi_map(terrain_map_t *gridMap, Seed_t* seeds)
             // prolly write a switch statement instead
             if(seeds[closestSeed].tile == treeTile.ascii) {
                 int treeChance = rand() % 100;
-                if(treeChance < 25) {
+                if(treeChance < 20) {
                     gridMap->grid[x][y] = treeTile.ascii;
                 } 
                 else {

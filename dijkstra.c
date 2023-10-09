@@ -1,6 +1,5 @@
 #include "heap.h"
 #include "dijkstra.h"
-#include "characters.h"
 #include <stdio.h>
 
 static int32_t character_cost_cmp(const void *key, const void *with) {
@@ -13,46 +12,17 @@ static int32_t character_cost_cmp(const void *key, const void *with) {
     return cost_k - cost_w;
 }
 
-struct tile_s* char_to_tile_s(char terrain){
-
-    switch(terrain){
-        case ':':
-            return &tallGrassTile;
-        case '^': 
-            return &treeTile;
-        case '~':
-            return &waterTile;
-        case '%':
-            return &mountainTile;
-        case '.':
-            return &clearingTile;
-        case 'C':
-            return &pokemonCenter;
-        case 'M':
-            return &pokeMart;
-        case '#':
-            return &pathTile;
-        case '@':
-        // for now this is pathtile because
-        // the PC is stationary on path
-            return &pathTile;
-        default:
-        // unreachable
-        fprintf(stderr, "something went wrong in char_to_tile_s func");
-        return &pathTile;
-    } 
-}
 
 void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t dNode[GRID_HEIGHT][GRID_WIDTH], struct character_s *npc)
 {   
     int i = 0; 
     int j = 0;
-    static uint32_t initialized = 0;
+    uint32_t initialized = 0;
     dijk_map_t *dn;
     heap_t h;
 
     //initialize the dNode to simulate given grid size, and set stuff
-    if (initialized < 2) {
+    if (!initialized) {
         for (i = 0; i < GRID_HEIGHT; i++) {
             for (j = 0; j < GRID_WIDTH; j++) {
                 dNode[i][j].pos.x = i;
