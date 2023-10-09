@@ -159,6 +159,7 @@ void npc_movement_loop(terrain_map_t *currGrid, struct character_s npc_arr[])
 {
     //todo pass in as param 
     int npc_arr_size = 5;
+    int cardinalDirForPacer = rand() % 2;
     struct character_s *currNpc;
     int dx, dy, neighborX, neighborY;
     heap_t h;
@@ -180,8 +181,21 @@ void npc_movement_loop(terrain_map_t *currGrid, struct character_s npc_arr[])
         switch(currNpc->ascii){
             case('p'):
                 // Pacer NPC logic
-                int nextX = currNpc->location.x + 0;
-                int nextY = currNpc->location.y + pacer.direction;
+                int nextX;
+                int nextY;
+                switch(cardinalDirForPacer) {
+                    case(0):
+                        nextX = currNpc->location.x + 0;
+                        nextY = currNpc->location.y + pacer.direction;
+                        break;
+                    case(1):
+                        nextX = currNpc->location.x + pacer.direction;
+                        nextY = currNpc->location.y + 0;
+                        break;
+                    default:
+                        // unreachable
+                        fprintf(stderr, "error in picking pacer direction being S-N or E-W");
+                }
                     
                 // Check if the tile in front of the pacer NPC is impassable
                 if (currNpc->cost(*char_to_tile_s(currGrid->grid[nextX][nextY])) == INT32_MAX) {
