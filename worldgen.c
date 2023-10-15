@@ -10,15 +10,20 @@
 
 
 terrain_map_t* worldMap[WORLD_HEIGHT][WORLD_WIDTH];
-dijk_map_t hikerCostMap[GRID_HEIGHT][GRID_WIDTH];
-dijk_map_t rivalCostMap[GRID_HEIGHT][GRID_WIDTH];
+
+struct tile_s edgeTile = 
+{
+    .ascii = '%',
+    .name = "edgeTile",
+    .tile_idx = EdgeTile,
+};
 
 void print_map(terrain_map_t *map) // TODO: take grid not map
 {
     for(int i = 0; i < GRID_HEIGHT; i++) {
         for(int j = 0; j < GRID_WIDTH; j++) {
             char *color = "";
-            switch (map->grid[i][j]) {
+            switch (map->grid[i][j]->ascii) {
                 case '%':
                     color = MAGENTA;
                     break;
@@ -66,10 +71,10 @@ void print_map(terrain_map_t *map) // TODO: take grid not map
                     break;
                 default:
                     // unreachable
-                    fprintf(stderr, "unhandled color case\n");
+                    fprintf(stderr, "unhandled color case %c\n", map->grid[i][j]->ascii);
                     break;
             }
-            printf("%s%c", color, map->grid[i][j]);
+            printf("%s%c", color, map->grid[i][j]->ascii);
         }
         putchar('\n');
     }
@@ -200,7 +205,7 @@ void npc_movement_loop(terrain_map_t *currGrid, struct character_s npc_arr[])
         //reset currenctCost for neighborloop 
         Location_t cheapestNeighbor = {.x = -1, .y = -1};
 
-        switch(currNpc->ascii){
+        switch(currNpc->self.ascii){
             case('p'):
                 // Pacer NPC logic
                 int nextX;
@@ -220,18 +225,18 @@ void npc_movement_loop(terrain_map_t *currGrid, struct character_s npc_arr[])
                 }
                     
                 // Check if the tile in front of the pacer NPC is impassable
-                if (currNpc->cost(*char_to_tile_s(currGrid->grid[nextX][nextY])) == INT32_MAX) {
+                if (currNpc->cost(*currGrid->grid[nextX][nextY]) == INT32_MAX) {
                     // If impassable, change direction by turning around
                     pacer.direction = -pacer.direction;
                 } else {
                     // Move the pacer NPC one tile
-                    currNpc->travelCost += currNpc->cost(*char_to_tile_s(currGrid->grid[nextX][nextY]));
+                    currNpc->travelCost += currNpc->cost(*currGrid->grid[nextX][nextY]);
 
-                    currGrid->grid[currNpc->location.x][currNpc->location.y] = currNpc->tile->ascii;
-                    currNpc->tile = char_to_tile_s(currGrid->grid[nextX][nextY]);
+                    currGrid->grid[currNpc->location.x][currNpc->location.y] = currNpc->standing;
+                    currNpc->standing = currGrid->grid[nextX][nextY];
                     currNpc->location.x = nextX;
                     currNpc->location.y = nextY;
-                    currGrid->grid[nextX][nextY] = currNpc->ascii; // Update the new tile
+                    currGrid->grid[nextX][nextY] = &currNpc->self; // Update the new tile
                 }
                 break;
             //  case('s'):
@@ -248,16 +253,16 @@ void npc_movement_loop(terrain_map_t *currGrid, struct character_s npc_arr[])
                 int nextWanderX = currNpc->location.x + dWanderX;
                 int nextWanderY = currNpc->location.y + dWanderY;
 
-                if (currNpc->cost(*char_to_tile_s(currGrid->grid[nextWanderX][nextWanderY])) != INT32_MAX) {
-                    if(currGrid->grid[nextWanderX][nextWanderY] == wanderer.tile->ascii) {
+                if (currNpc->cost(*currGrid->grid[nextWanderX][nextWanderY]) != INT32_MAX) {
+                    if(currGrid->grid[nextWanderX][nextWanderY] == wanderer.standing) {
                     // Move the wanderer NPC one tile
-                    currNpc->travelCost += currNpc->cost(*char_to_tile_s(currGrid->grid[nextWanderX][nextWanderY]));
+                    currNpc->travelCost += currNpc->cost(*currGrid->grid[nextWanderX][nextWanderY]);
 
-                    currGrid->grid[currNpc->location.x][currNpc->location.y] = currNpc->tile->ascii;
-                    currNpc->tile = char_to_tile_s(currGrid->grid[nextWanderX][nextWanderY]);
+                    currGrid->grid[currNpc->location.x][currNpc->location.y] = currNpc->standing;
+                    currNpc->standing = currGrid->grid[nextWanderX][nextWanderY];
                     currNpc->location.x = nextWanderX;
                     currNpc->location.y = nextWanderY;
-                    currGrid->grid[nextWanderX][nextWanderY] = currNpc->ascii; // Update the new tile
+                    currGrid->grid[nextWanderX][nextWanderY] = &currNpc->self; // Update the new tile
                     }
                 }
                 break;
@@ -273,15 +278,15 @@ void npc_movement_loop(terrain_map_t *currGrid, struct character_s npc_arr[])
                 int nextExplorX = currNpc->location.x + dExplorX;
                 int nextExplorY = currNpc->location.y + dExplorY;
 
-                if (currNpc->cost(*char_to_tile_s(currGrid->grid[nextExplorX][nextExplorY])) != INT32_MAX) {
+                if (currNpc->cost(*currGrid->grid[nextExplorX][nextExplorY]) != INT32_MAX) {
                     // Move the wanderer NPC one tile
-                    currNpc->travelCost += currNpc->cost(*char_to_tile_s(currGrid->grid[nextExplorX][nextExplorY]));
+                    currNpc->travelCost += currNpc->cost(*currGrid->grid[nextExplorX][nextExplorY]);
 
-                    currGrid->grid[currNpc->location.x][currNpc->location.y] = currNpc->tile->ascii;
-                    currNpc->tile = char_to_tile_s(currGrid->grid[nextExplorX][nextExplorY]);
+                    currGrid->grid[currNpc->location.x][currNpc->location.y] = currNpc->standing;
+                    currNpc->standing = currGrid->grid[nextExplorX][nextExplorY];
                     currNpc->location.x = nextExplorX;
                     currNpc->location.y = nextExplorY;
-                    currGrid->grid[nextExplorX][nextExplorY] = currNpc->ascii; // Update the new tile
+                    currGrid->grid[nextExplorX][nextExplorY] = &currNpc->self; // Update the new tile
                 }
                 break;
             default:
@@ -302,24 +307,24 @@ void npc_movement_loop(terrain_map_t *currGrid, struct character_s npc_arr[])
                     }
                 }
                 
-                currNpc->travelCost = currNpc->travelCost + currNpc->cost(*char_to_tile_s(currGrid->grid[cheapestNeighbor.x + currNpc->location.x][cheapestNeighbor.y + currNpc->location.y])); 
+                currNpc->travelCost = currNpc->travelCost + currNpc->cost(*currGrid->grid[cheapestNeighbor.x + currNpc->location.x][cheapestNeighbor.y + currNpc->location.y]); 
 
                 neighborX = currNpc->location.x + cheapestNeighbor.x;
                 neighborY = currNpc->location.y + cheapestNeighbor.y;
 
-                if(currGrid->grid[neighborX][neighborY] == currGrid->grid[pc.location.x][pc.location.y]){
+                if(currGrid->grid[neighborX][neighborY]->ascii == currGrid->grid[pc.location.x][pc.location.y]->ascii){
                     continue;
                 }
-                if(currGrid->grid[neighborX][neighborY] == 'h' || currGrid->grid[neighborX][neighborY] == 'r' || currGrid->grid[neighborX][neighborY] == 'p' ||
-                   currGrid->grid[neighborX][neighborY] == 'w' || currGrid->grid[neighborX][neighborY] == 'e' || currGrid->grid[neighborX][neighborY] == 's'){
+                if(currGrid->grid[neighborX][neighborY]->ascii == 'h' || currGrid->grid[neighborX][neighborY]->ascii == 'r' || currGrid->grid[neighborX][neighborY]->ascii == 'p' ||
+                   currGrid->grid[neighborX][neighborY]->ascii == 'w' || currGrid->grid[neighborX][neighborY]->ascii == 'e' || currGrid->grid[neighborX][neighborY]->ascii == 's'){
                     continue;
                 }
 
-                currGrid->grid[currNpc->location.x][currNpc->location.y] = currNpc->tile->ascii;
-                currNpc->tile = char_to_tile_s(currGrid->grid[neighborX][neighborY]);
+                currGrid->grid[currNpc->location.x][currNpc->location.y] = currNpc->standing;
+                currNpc->standing = currGrid->grid[neighborX][neighborY];
                 currNpc->location.x = neighborX;
                 currNpc->location.y = neighborY;
-                currGrid->grid[neighborX][neighborY] = currNpc->ascii;
+                currGrid->grid[neighborX][neighborY] = &currNpc->self;
         }
         heap_delete(&h);
         usleep(250000);
@@ -346,8 +351,6 @@ int main(int argc, char *argv[])
 
     null_world_map();
 
-
-    //init_first_grid();
     terrain_map_t* currGrid = (terrain_map_t*)malloc(sizeof(terrain_map_t));
     Location_t currLoc = { .x = 200, .y = 200 };
     currGrid->location = currLoc;
@@ -358,16 +361,17 @@ int main(int argc, char *argv[])
     worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
     gates = currGrid->gates;
     print_map(worldMap[currLoc.x][currLoc.y]);
-    printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
+    // printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
 
     // create dijkstra cost maps for npc's that need em
-    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
+    // dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
     dijkstra_map(currGrid, &pc.location, rival.costMap, &rival);
-
+    // print_dijkstra_map(hiker.costMap);
+    print_dijkstra_map(rival.costMap);
     // array to hold all the npc's that will spawn per Grid decided on the numTrainers flag, or default
-    struct character_s npc_arr[] = {hiker, rival, pacer, wanderer, explorer};
+    struct character_s npc_arr[] = {hiker, /* rival, */ pacer, wanderer, explorer};
     // npc movement.
-    npc_movement_loop(currGrid, npc_arr);
+    // npc_movement_loop(currGrid, npc_arr);
 
 
 

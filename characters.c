@@ -1,70 +1,69 @@
 #include "characters.h"
 #include <stdio.h>
+#include <stdbool.h>
 
-
-// .cost is a function pointer that we assign for each character type
 struct character_s pc = 
 {
-  .ascii = '@',
-  .travelCost =0,
-  .cost = pc_cost,
+    .self = { .ascii = '@', .name = "pcTile" },
+    .travelCost =0,
+    .cost = NULL,
 };
 
 struct character_s hiker = 
 {
-  .ascii = 'h',
-  .travelCost = 0,
-  .cost = hiker_cost,
-  .costMap = {},
+    .self = { .ascii = 'h', .name = "hikerTile" },
+    .travelCost = 0,
+    .cost = hiker_cost,
+    .costMap = {},
 };
 
 struct character_s rival = 
 {
-  .ascii = 'r',
-  .travelCost = 0,
-  .cost = rival_cost,
-  .costMap = {},
+    .self = { .ascii = 'r', .name = "rivalTile" },
+    .travelCost = 0,
+    .cost = rival_cost,
+    .costMap = {},
 };
 
 struct character_s pacer =
 {
-  .direction = 1,
-  .ascii = 'p',
-  .travelCost = 0,
-  .cost = other_cost,
-  .costMap = {},
+    .direction = 1,
+    .self = { .ascii = 'p', .name = "pacerTile" },
+    .travelCost = 0,
+    .cost = other_cost,
+    .costMap = {},
 };
 
 struct character_s sentry =
 {
-  .ascii = 's',
-  .travelCost = 0,
-  .cost = other_cost,
-  .costMap = {},
+    .self = { .ascii = 's', .name = "sentryTile" },
+    .travelCost = 0,
+    .cost = other_cost,
+    .costMap = {},
 };
 
 struct character_s wanderer =
 {
-  .ascii = 'w',
-  .travelCost = 0,
-  .cost = other_cost,
-  .costMap = {},
+    .self = { .ascii = 'w', .name = "wandererTile" },
+    .travelCost = 0,
+    .cost = other_cost,
+    .costMap = {},
 };
 
 struct character_s explorer =
 {
-  .ascii = 'e',
-  .travelCost = 0,
-  .cost = other_cost,
-  .costMap = {},
+    .self = { .ascii = 'e', .name = "explorerTile" },
+    .travelCost = 0,
+    .cost = other_cost,
+    .costMap = {},
 };
 
 struct character_s swimmer =
 {
-  .ascii = 's',
-  .travelCost = 0,
-  .cost = swimmer_cost,
-  .costMap = {},
+    .self = { .ascii = 's', .name = "swimmerTile" },
+    .travelCost = 0,
+    .cost = swimmer_cost,
+    .costMap = {},
 };
 
 
@@ -75,185 +74,182 @@ void find_loco_to_place_pc(terrain_map_t *map, Location_t *l)
         l->x = 1+(rand() % (GRID_HEIGHT -3));
         l->y = 1+(rand() % (GRID_WIDTH -3));
 
-        if(map->grid[l->x][l->y] == pathTile.ascii) {
+        if(map->grid[l->x][l->y]->ascii == pathTile.ascii) {
         	break;
         }
     } while(1); 
 }
 
+static inline bool generic_spawn_check(terrain_map_t *map, Location_t* l) 
+{
+    return map->grid[l->x][l->y]->ascii == '@' || map->grid[l->x][l->y]->ascii == 'h' || 
+        map->grid[l->x][l->y]->ascii == 'r' || map->grid[l->x][l->y]->ascii == '~' || 
+        map->grid[l->x][l->y]->ascii == '%' || map->grid[l->x][l->y]->ascii == 'C' ||
+        map->grid[l->x][l->y]->ascii == 'M' || map->grid[l->x][l->y]->ascii == '^' || 
+        map->grid[l->x][l->y]->ascii == 'p' || map->grid[l->x][l->y]->ascii == 's' || 
+        map->grid[l->x][l->y]->ascii == 'w' || map->grid[l->x][l->y]->ascii == 'e' ||
+        map->grid[l->x][l->y]->ascii == '#';
+}
+
+static inline bool hiker_spawn_check(terrain_map_t *map, Location_t* l) 
+{
+    return map->grid[l->x][l->y]->ascii == '@' || map->grid[l->x][l->y]->ascii == 'h' || 
+        map->grid[l->x][l->y]->ascii == 'r' || map->grid[l->x][l->y]->ascii == '~' || 
+        map->grid[l->x][l->y]->ascii == 'C' || map->grid[l->x][l->y]->ascii == 'M' ||
+        map->grid[l->x][l->y]->ascii == 'p' || map->grid[l->x][l->y]->ascii == 's' || 
+        map->grid[l->x][l->y]->ascii == 'w' || map->grid[l->x][l->y]->ascii == 'e' ||
+        map->grid[l->x][l->y]->ascii == '#';
+}
+
+/*
+static inline bool swimmer_spawn_check(terrain_map_t *map, Location_t* l)
+{
+    return map->grid[l->x][l->y]->ascii == '~';
+}
+*/
+
 void find_loco_to_place_npc(terrain_map_t *map, Location_t *l, struct character_s npc)
 {
-  do {
-      l->x = 1+(rand() % (GRID_HEIGHT -3));
-      l->y = 1+(rand() % (GRID_WIDTH -3));
-    switch(npc.ascii){
-      case('h'):
-        if(map->grid[l->x][l->y] == '@' || map->grid[l->x][l->y] == 'h' || map->grid[l->x][l->y] == 'r' ||
-           map->grid[l->x][l->y] == '~' || map->grid[l->x][l->y] == 'C' || map->grid[l->x][l->y] == 'M' ){
-          continue;
+    do {
+        l->x = 1+(rand() % (GRID_HEIGHT -3));
+        l->y = 1+(rand() % (GRID_WIDTH - 3));
+        switch(npc.self.ascii) {
+            case('h'):
+                if(hiker_spawn_check(map, l)) {
+                    continue;
+                }
+                break;
+            case('r'):
+                if(generic_spawn_check(map, l)) {
+                    continue;
+                }
+                break;
+            case('p'):
+                if(generic_spawn_check(map, l)) {
+                    continue;
+                }
+                break;
+            case('s'):
+                if(generic_spawn_check(map, l)) {
+                    continue;
+                }
+                break;
+            case('w'):
+                if(generic_spawn_check(map, l)) {
+                    continue;
+                }
+                break;
+            case('e'):
+                if(generic_spawn_check(map, l)) {
+                    continue;
+                }
+                break;
+            default:
+                fprintf(stderr, "unable to place this npc: %c", npc.standing->ascii);
+                break;
         }
-        break;
-      case('r'):
-        if(map->grid[l->x][l->y] == '@' || map->grid[l->x][l->y] == 'h' || map->grid[l->x][l->y] == 'r' ||
-           map->grid[l->x][l->y] == '~' || map->grid[l->x][l->y] == '%' || map->grid[l->x][l->y] == 'C' ||
-           map->grid[l->x][l->y] == 'M' || map->grid[l->x][l->y] == '^' || map->grid[l->x][l->y] == '#' ) {
-          continue;
-           }
-        break;
-        case('p'):
-        if(map->grid[l->x][l->y] == '@' || map->grid[l->x][l->y] == 'h' || map->grid[l->x][l->y] == 'r' ||
-           map->grid[l->x][l->y] == '~' || map->grid[l->x][l->y] == '%' || map->grid[l->x][l->y] == 'C' ||
-           map->grid[l->x][l->y] == 'M' || map->grid[l->x][l->y] == '^' || map->grid[l->x][l->y] == 'p' ||
-           map->grid[l->x][l->y] == 's' || map->grid[l->x][l->y] == 'w' || map->grid[l->x][l->y] == 'e' ||
-           map->grid[l->x][l->y] == '#') {
-          continue;
-           }
-        break;
-        case('s'):
-        if(map->grid[l->x][l->y] == '@' || map->grid[l->x][l->y] == 'h' || map->grid[l->x][l->y] == 'r' ||
-           map->grid[l->x][l->y] == '~' || map->grid[l->x][l->y] == '%' || map->grid[l->x][l->y] == 'C' ||
-           map->grid[l->x][l->y] == 'M' || map->grid[l->x][l->y] == '^' || map->grid[l->x][l->y] == 'p' ||
-           map->grid[l->x][l->y] == 's' || map->grid[l->x][l->y] == 'w' || map->grid[l->x][l->y] == 'e' ||
-           map->grid[l->x][l->y] == '#') {
-          continue;
-           }
-        break;
-        case('w'):
-        if(map->grid[l->x][l->y] == '@' || map->grid[l->x][l->y] == 'h' || map->grid[l->x][l->y] == 'r' ||
-           map->grid[l->x][l->y] == '~' || map->grid[l->x][l->y] == '%' || map->grid[l->x][l->y] == 'C' ||
-           map->grid[l->x][l->y] == 'M' || map->grid[l->x][l->y] == '^' || map->grid[l->x][l->y] == 'p' ||
-           map->grid[l->x][l->y] == 's' || map->grid[l->x][l->y] == 'w' || map->grid[l->x][l->y] == 'e' ||
-           map->grid[l->x][l->y] == '#') {
-          continue;
-           }
-        break;
-        case('e'):
-        if(map->grid[l->x][l->y] == '@' || map->grid[l->x][l->y] == 'h' || map->grid[l->x][l->y] == 'r' ||
-           map->grid[l->x][l->y] == '~' || map->grid[l->x][l->y] == '%' || map->grid[l->x][l->y] == 'C' ||
-           map->grid[l->x][l->y] == 'M' || map->grid[l->x][l->y] == '^' || map->grid[l->x][l->y] == 'p' ||
-           map->grid[l->x][l->y] == 's' || map->grid[l->x][l->y] == 'w' || map->grid[l->x][l->y] == 'e' ||
-           map->grid[l->x][l->y] == '#') {
-          continue;
-           }
-        break;
-      default:
-      fprintf(stderr, "unable to place this npc: %c", npc.ascii);
-      break;
-    }
-    break;
+    break; // we matched a sucessful location break the random check
   } while(1);
 }
 
 void place_pc(terrain_map_t *map)
 {
-  	(void)tiles[TileCount];
+    (void)tiles[TileCount];
     Location_t l;
     find_loco_to_place_pc(map, &l);
 
-    map->grid[l.x][l.y] = pc.ascii;
+    pc.standing = &pathTile;
+    map->grid[l.x][l.y] = &pc.self;
     pc.location.x = l.x;
     pc.location.y = l.y;
-    pc.tile = &pathTile;
 }
 
 void place_npc(terrain_map_t *map, struct character_s *npc)
 {
-  Location_t l;
-  find_loco_to_place_npc(map, &l, *npc);
- 
-  npc->tile = char_to_tile_s(map->grid[l.x][l.y]);
-  npc->location.x = l.x;
-  npc->location.y = l.y;
-  map->grid[l.x][l.y] = npc->ascii;
-}
-
-uint32_t pc_cost(struct tile_s tile) 
-{
-	switch(tile.tile_idx) {
-		case Path:
-    case PokeCenter:
-    case PokeMart:
-    case Clearing:
-			return 10;
-		case TreeTile:
-    case MountainTile:
-    case Water:
-			return INT32_MAX;
-		default:
-			// should not reach here
-			return INT32_MAX;
-  	}
+    Location_t l;
+    find_loco_to_place_npc(map, &l, *npc);
+    
+    npc->standing = map->grid[l.x][l.y];
+    map->grid[l.x][l.y] = &npc->self;
+    npc->location.x = l.x;
+    npc->location.y = l.y;
 }
 
 uint32_t hiker_cost(struct tile_s tile)
 {
-  switch(tile.ascii) {
-    case '#': 
-      return 10;
-    case '.':
-      return 10;
-    case 'C':
-      return 50;
-    case 'M':
-      return 50;
-    case '%':
-      return 15;
-    case '^':
-      return 15;
-    case ':':
-      return 15;
-    case '~':
-      return INT32_MAX;
-    default:
-      // should not reach here
-      return INT32_MAX;
-  }
+    switch(tile.tile_idx) {
+        case PathTile: 
+            return 10;
+        case ClearingTile:
+            return 10;
+        case PokeCenter:
+            return 50;
+        case PokeMart:
+            return 50;
+        case MountainTile:
+            return 15;
+        case TreeTile:
+            return 15;
+        case TallGrassTile:
+            return 15;
+        case WaterTile:
+            return INT32_MAX;
+        case EdgeTile:
+            return INT32_MAX;
+        default:
+        // should not reach here
+            return INT32_MAX;
+    }
 }
 
 uint32_t rival_cost(struct tile_s tile)
 {
-  switch(tile.ascii){
-    case '#':
-      return 10; 
-    case '.':
-      return 10;
-    case 'C':
-      return 50;
-    case 'M':
-      return 50;
-    case ':':
-      return 20;
-    case '%':
-      return INT32_MAX;
-    case '^':
-      return INT32_MAX;
-    case '~':
-      return INT32_MAX;
+  switch(tile.tile_idx) {
+    case PathTile:
+        return 10; 
+    case ClearingTile:
+        return 10;
+    case PokeCenter:
+        return 50;
+    case PokeMart:
+        return 50;
+    case TallGrassTile:
+        return 20;
+    case MountainTile:
+        return INT32_MAX;
+    case TreeTile:
+        return INT32_MAX;
+    case WaterTile:
+        return INT32_MAX;
+    case EdgeTile:
+            return INT32_MAX;
     default:
-      // should not reach here
-      return INT32_MAX;
+        // should not reach here
+        return INT32_MAX;
   }    
 }
 
 uint32_t swimmer_cost(struct tile_s tile)
 {
-  switch(tile.ascii){
-    case '#':
-      return INT32_MAX; 
-    case '.':
-      return INT32_MAX;
-    case 'C':
-      return INT32_MAX;
-    case 'M':
-      return INT32_MAX;
-    case ':':
-      return INT32_MAX;
-    case '%':
-      return INT32_MAX;
-    case '^':
-      return INT32_MAX;
-    case '~':
-      return 7;
+  switch(tile.tile_idx) {
+    case PathTile:
+        return INT32_MAX; 
+    case ClearingTile:
+        return INT32_MAX;
+    case PokeCenter:
+        return INT32_MAX;
+    case PokeMart:
+        return INT32_MAX;
+    case TallGrassTile:
+        return INT32_MAX;
+    case MountainTile:
+        return INT32_MAX;
+    case TreeTile:
+        return INT32_MAX;
+    case WaterTile:
+        return 7;
+    case EdgeTile:
+            return INT32_MAX;
     default:
       // should not reach here
       return INT32_MAX;
@@ -262,67 +258,27 @@ uint32_t swimmer_cost(struct tile_s tile)
 
 uint32_t other_cost(struct tile_s tile)
 {
-  switch(tile.ascii){
-    case '#':
-      return 10; 
-    case '.':
-      return 10;
-    case 'C':
-      return 50;
-    case 'M':
-      return 50;
-      case ':':
-      return 20;
-    case '%':
-      return INT32_MAX;
-    case '^':
-      return INT32_MAX;
-    case '~':
-      return INT32_MAX;
+  switch(tile.tile_idx) {
+    case PathTile:
+        return 10; 
+    case ClearingTile:
+        return 10;
+    case PokeCenter:
+        return 50;
+    case PokeMart:
+        return 50;
+    case TallGrassTile:
+        return 20;
+    case MountainTile:
+        return INT32_MAX;
+    case TreeTile:
+        return INT32_MAX;
+    case WaterTile:
+        return INT32_MAX;
+    case EdgeTile:
+            return INT32_MAX;
     default:
-      // should not reach here
-      // or tile is a npc
+      // should not reach here or tile is a npc
       return INT32_MAX;
-  }    
-}
-
-struct tile_s* char_to_tile_s(char terrain){
-
-    switch(terrain){
-        case ':':
-            return &tallGrassTile;
-        case '^': 
-            return &treeTile;
-        case '~':
-            return &waterTile;
-        case '%':
-            return &mountainTile;
-        case '.':
-            return &clearingTile;
-        case 'C':
-            return &pokemonCenter;
-        case 'M':
-            return &pokeMart;
-        case '#':
-            return &pathTile;
-        case '@':
-            return pc.tile;
-        case 'h':
-            return hiker.tile;
-        case 'r':
-            return rival.tile;
-        case 'p':
-            return pacer.tile;
-        case 's':
-            return sentry.tile;
-        case 'w':
-            return wanderer.tile;
-        case 'e':
-            return explorer.tile;
-        default:
-        // unreachable
-        fprintf(stderr, "something went wrong in char_to_tile_s func: %c", terrain);
-        return &pathTile;
-        
-    } 
+    }    
 }

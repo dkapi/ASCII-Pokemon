@@ -7,18 +7,16 @@
 
  struct tile_s pokemonCenter = 
 {
- .name = "center",
- .ascii = 'C',
- .tile_idx = PokeCenter,
- .adjacency = {0.f},
+    .name = "center",
+    .ascii = 'C',
+    .tile_idx = PokeCenter
 };
 
 struct tile_s pokeMart = 
 {
-   .name = "mart",
-   .ascii = 'M',
-   .tile_idx = PokeMart,
-   .adjacency = {0.f},
+    .name = "mart",
+    .ascii = 'M',
+    .tile_idx = PokeMart,
 };
 
 
@@ -33,24 +31,23 @@ void generate_voronoi_map(terrain_map_t *map, Gates_t gates)
     generate_map_path(map, gates);
     place_center(map);
     place_mart(map);
-
 }
 
-void generate_map_border(terrain_map_t* gridMap)
+void generate_map_border(terrain_map_t* map)
 {
     for(int i = 0; i < GRID_HEIGHT; i++) {
-        gridMap->grid[i][0] = mountainTile.ascii;
-        gridMap->grid[i][GRID_WIDTH - 1] = mountainTile.ascii;
+        map->grid[i][0] = &mountainTile;
+        map->grid[i][GRID_WIDTH - 1] =  &mountainTile;
     }
 
     for(int j = 0; j < GRID_WIDTH; j++) {
-        gridMap->grid[0][j] = mountainTile.ascii;
-        gridMap->grid[GRID_HEIGHT - 1][j] = mountainTile.ascii;
+        map->grid[0][j] = &mountainTile;
+        map->grid[GRID_HEIGHT - 1][j] = &mountainTile;
     }
 
     for(int i = 1; i < GRID_HEIGHT - 1; i++) {
         for (int j = 1; j < GRID_WIDTH - 1; j++) {
-            gridMap->grid[i][j] = clearingTile.ascii;
+            map->grid[i][j] = &clearingTile;
         }
     }
 }
@@ -60,12 +57,12 @@ void generate_voronoi_seeds(Seed_t* seeds)
     for(int i = 0; i < SEED_NUM; i++) {
         seeds[i].loc.x = 1 + (rand() % (GRID_HEIGHT - 1));
         seeds[i].loc.y = 1 + (rand() % (GRID_WIDTH - 1));
-        seeds[i].tile = tiles[i % (TileCount-1)]->ascii;
+        seeds[i].tile = tiles[i % (SpawnTileCount)];
     }
     // TODO: choose seed at random instead of this distribution
 }
 
-void fill_vorinoi_map(terrain_map_t *gridMap, Seed_t* seeds)
+void fill_vorinoi_map(terrain_map_t *map, Seed_t* seeds)
 {
     // start at one because of border
     for(int x = 1; x < GRID_HEIGHT - 1; x++) {
@@ -81,17 +78,17 @@ void fill_vorinoi_map(terrain_map_t *gridMap, Seed_t* seeds)
             }
             // TODO: this is not desired way to do this but it works
             // prolly write a switch statement instead
-            if(seeds[closestSeed].tile == treeTile.ascii) {
+            if(seeds[closestSeed].tile == &treeTile) {
                 int treeChance = rand() % 100;
                 if(treeChance < 20) {
-                    gridMap->grid[x][y] = treeTile.ascii;
+                    map->grid[x][y] = &treeTile;
                 } 
                 else {
-                    gridMap->grid[x][y] = clearingTile.ascii;
+                    map->grid[x][y] = &clearingTile;
                 }
             }
-            else {
-                gridMap->grid[x][y] = seeds[closestSeed].tile;
+            else {    
+                map->grid[x][y] = seeds[closestSeed].tile;
             }
         }
     }
@@ -116,10 +113,10 @@ void generate_map_gates(terrain_map_t *map, Gates_t* gates)
         gates->top.x = 0;
         gates->top.y = 1 + (rand() % (GRID_WIDTH - 2));
     }
-    map->grid[gates->left.x][gates->left.y]     = pathTile.ascii;
-    map->grid[gates->right.x][gates->right.y]   = pathTile.ascii;
-    map->grid[gates->bottom.x][gates->bottom.y] = pathTile.ascii;
-    map->grid[gates->top.x][gates->top.y]       = pathTile.ascii;
+    map->grid[gates->left.x][gates->left.y]     = &pathTile;
+    map->grid[gates->right.x][gates->right.y]   = &pathTile;
+    map->grid[gates->bottom.x][gates->bottom.y] = &pathTile;
+    map->grid[gates->top.x][gates->top.y]       = &pathTile;
 }
 
 void generate_map_path(terrain_map_t *m, Gates_t gates)
@@ -129,7 +126,7 @@ void generate_map_path(terrain_map_t *m, Gates_t gates)
     
     // left gate: go right until bottom gate
     while(gates.left.y < gates.bottom.y) {
-        m->grid[gates.left.x][gates.left.y] = pathTile.ascii;
+        m->grid[gates.left.x][gates.left.y] = &pathTile;
         gates.left.y++;
     }
 
@@ -137,21 +134,21 @@ void generate_map_path(terrain_map_t *m, Gates_t gates)
     direction = gates.left.x > gates.right.x ? -1 : 1;
     // left gate: go in virtical direction of right gate
     while(gates.left.x != gates.right.x) {
-        m->grid[gates.left.x][gates.left.y] = pathTile.ascii;
+        m->grid[gates.left.x][gates.left.y] = &pathTile;
         gates.left.x += direction;
     }
     
 
     // left gate: go rest of way in horizontal to right gate
     while(gates.left.y != GRID_WIDTH) {
-        m->grid[gates.left.x][gates.left.y] = pathTile.ascii;
+        m->grid[gates.left.x][gates.left.y] = &pathTile;
         gates.left.y++;
     }
 
 
     // bottom gate: go up until right gate (gates.left.x has been changed)
     while(gates.bottom.x > gates.left.x) {
-        m->grid[gates.bottom.x][gates.bottom.y] = pathTile.ascii;
+        m->grid[gates.bottom.x][gates.bottom.y] = &pathTile;
         gates.bottom.x--;
     }
 
@@ -159,27 +156,27 @@ void generate_map_path(terrain_map_t *m, Gates_t gates)
     // bottom gate: go in horizontal direction of top gate
     direction = gates.bottom.y > gates.top.y ? -1 : 1;
     while(gates.bottom.y != gates.top.y) {
-        m->grid[gates.bottom.x][gates.bottom.y] = pathTile.ascii;
+        m->grid[gates.bottom.x][gates.bottom.y] = &pathTile;
         gates.bottom.y += direction;
     }
 
     // bottom gate: go rest of the way up to top gate
     while(gates.bottom.x != 0) {
-        m->grid[gates.bottom.x][gates.bottom.y] = pathTile.ascii;
+        m->grid[gates.bottom.x][gates.bottom.y] = &pathTile;
         gates.bottom.x--;
     }
 
     if(m->location.y == 400){
-        m->grid[gates.top.x][gates.top.y] = mountainTile.ascii;
+        m->grid[gates.top.x][gates.top.y] = &mountainTile;
     }
     if(m->location.x == 0){
-        m->grid[gates.left.x][gates.left.y] = mountainTile.ascii;
+        m->grid[gates.left.x][gates.left.y] = &mountainTile;
     }
     if(m->location.y == 0){
-        m->grid[gates.bottom.x][gates.bottom.y] = mountainTile.ascii;
+        m->grid[gates.bottom.x][gates.bottom.y] = &mountainTile;
     }
     if(m->location.x == 400){
-        m->grid[gates.right.x][gates.right.y] = mountainTile.ascii;
+        m->grid[gates.right.x][gates.right.y] = &mountainTile;
     }
 
 }
@@ -191,26 +188,26 @@ void generate_map_path(terrain_map_t *m, Gates_t gates)
       l->x = rand() % (GRID_HEIGHT -3) +1;
       l->y = rand() % (GRID_WIDTH -3) +1;
 
-        if((m->grid[l->x-1][l->y]    == pathTile.ascii    &&
-          m->grid[l->x-1][l->y+1]    == pathTile.ascii)   ||
-          (m->grid[l->x+2][l->y]     == pathTile.ascii    &&
-          m->grid[l->x+2][l->y+1]    == pathTile.ascii)   ||
-          (m->grid[l->x][l->y-1]     == pathTile.ascii    &&
-          m->grid[l->x+1][l->y-1]    == pathTile.ascii)   ||
-          (m->grid[l->x][l->y+2]     == pathTile.ascii    &&
-          m->grid[l->x+1][l->y+2]    == pathTile.ascii    &&
-          m->grid[l->x][l->y]        != pokeMart.ascii    &&
-          m->grid[l->x][l->y]        != pokemonCenter.ascii  &&
-          m->grid[l->x+1][l->y]      != pokeMart.ascii    &&
-          m->grid[l->x+1][l->y]      != pokemonCenter.ascii  &&
-          m->grid[l->x][l->y+1]      != pokeMart.ascii    &&
-          m->grid[l->x][l->y+1]      != pokemonCenter.ascii  &&
-          m->grid[l->x+1][l->y+1]    != pokeMart.ascii    &&
-          m->grid[l->x+1][l->y+1]    != pokemonCenter.ascii  &&
-          m->grid[l->x][l->y]        != pathTile.ascii    &&
-          m->grid[l->x+1][l->y]      != pathTile.ascii    &&
-          m->grid[l->x][l->y+1]      != pathTile.ascii    &&
-          m->grid[l->x+1][l->y+1]    != pathTile.ascii)) {
+        if((m->grid[l->x-1][l->y]    == &pathTile    &&
+          m->grid[l->x-1][l->y+1]    == &pathTile)   ||
+          (m->grid[l->x+2][l->y]     == &pathTile    &&
+          m->grid[l->x+2][l->y+1]    == &pathTile)   ||
+          (m->grid[l->x][l->y-1]     == &pathTile    &&
+          m->grid[l->x+1][l->y-1]    == &pathTile)   ||
+          (m->grid[l->x][l->y+2]     == &pathTile    &&
+          m->grid[l->x+1][l->y+2]    == &pathTile    &&
+          m->grid[l->x][l->y]        != &pokeMart    &&
+          m->grid[l->x][l->y]        != &pokemonCenter  &&
+          m->grid[l->x+1][l->y]      != &pokeMart    &&
+          m->grid[l->x+1][l->y]      != &pokemonCenter  &&
+          m->grid[l->x][l->y+1]      != &pokeMart    &&
+          m->grid[l->x][l->y+1]      != &pokemonCenter  &&
+          m->grid[l->x+1][l->y+1]    != &pokeMart    &&
+          m->grid[l->x+1][l->y+1]    != &pokemonCenter  &&
+          m->grid[l->x][l->y]        != &pathTile    &&
+          m->grid[l->x+1][l->y]      != &pathTile    &&
+          m->grid[l->x][l->y+1]      != &pathTile    &&
+          m->grid[l->x+1][l->y+1]    != &pathTile)) {
             break;
           }
     }while(1); 
@@ -228,10 +225,10 @@ void place_mart(terrain_map_t *m)
         Location_t l;
         find_building_location(m, &l);
 
-        m->grid[l.x][l.y] = pokeMart.ascii;
-        m->grid[l.x +1][l.y] = pokeMart.ascii;
-        m->grid[l.x][l.y+1] = pokeMart.ascii;
-        m->grid[l.x +1][l.y+1] = pokeMart.ascii;
+        m->grid[l.x][l.y]      = &pokeMart;
+        m->grid[l.x +1][l.y]   = &pokeMart;
+        m->grid[l.x][l.y+1]    = &pokeMart;
+        m->grid[l.x +1][l.y+1] = &pokeMart;
     }
     else {
         // TODO: make mangattan distance use offset from 200, 200 (since that is 0,0)
@@ -239,13 +236,13 @@ void place_mart(terrain_map_t *m)
         building_chance = (((manhattan_dist * -45)/200)+40)/-1;
         chance_center = rand() % 100;
         if(chance_center > building_chance){
-        Location_t l;
-        find_building_location(m, &l);
+            Location_t l;
+            find_building_location(m, &l);
 
-        m->grid[l.x][l.y] = pokeMart.ascii;
-        m->grid[l.x +1][l.y] = pokeMart.ascii;
-        m->grid[l.x][l.y+1] = pokeMart.ascii;
-        m->grid[l.x +1][l.y+1] = pokeMart.ascii; 
+            m->grid[l.x][l.y]      = &pokeMart;
+            m->grid[l.x +1][l.y]   = &pokeMart;
+            m->grid[l.x][l.y+1]    = &pokeMart;
+            m->grid[l.x +1][l.y+1] = &pokeMart; 
         }
     }
 }
@@ -261,10 +258,10 @@ void place_center(terrain_map_t *m)
         Location_t l;
         find_building_location(m, &l);
 
-        m->grid[l.x][l.y] = pokemonCenter.ascii;
-        m->grid[l.x +1][l.y] = pokemonCenter.ascii;
-        m->grid[l.x][l.y+1] = pokemonCenter.ascii;
-        m->grid[l.x +1][l.y+1] = pokemonCenter.ascii;
+        m->grid[l.x][l.y]      = &pokemonCenter;
+        m->grid[l.x +1][l.y]   = &pokemonCenter;
+        m->grid[l.x][l.y+1]    = &pokemonCenter;
+        m->grid[l.x +1][l.y+1] = &pokemonCenter;
     } else {
         // TODO: copy other manhattan fix
         manhattan_dist = abs(0- m->location.x) + abs(0 - m->location.y);
@@ -274,10 +271,10 @@ void place_center(terrain_map_t *m)
         Location_t l;
         find_building_location(m, &l);
 
-        m->grid[l.x][l.y] = pokemonCenter.ascii;
-        m->grid[l.x +1][l.y] = pokemonCenter.ascii;
-        m->grid[l.x][l.y+1] = pokemonCenter.ascii;
-        m->grid[l.x +1][l.y+1] = pokemonCenter.ascii; 
+        m->grid[l.x][l.y]      = &pokemonCenter;
+        m->grid[l.x +1][l.y]   = &pokemonCenter;
+        m->grid[l.x][l.y+1]    = &pokemonCenter;
+        m->grid[l.x +1][l.y+1] = &pokemonCenter; 
         }
     }
 }

@@ -7,7 +7,7 @@
 typedef struct Seed
 {
     Location_t loc;
-    char tile;
+    struct tile_s* tile;
 } Seed_t;
 
 

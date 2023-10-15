@@ -27,7 +27,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t dNode[GRID_H
             for (j = 0; j < GRID_WIDTH; j++) {
                 dNode[i][j].pos.x = i;
                 dNode[i][j].pos.y = j;
-                dNode[i][j].tile = char_to_tile_s(map->grid[i][j]);
+                dNode[i][j].tile = map->grid[i][j];
             }
         }
         initialized++;
@@ -60,7 +60,6 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t dNode[GRID_H
         dn->hn = NULL;
         int dx= 0, dy= 0, neighborX =0, neighborY = 0;
         uint32_t newCost = 0;
-        int currCost = 0;
         dijk_map_t *neighbor;
         
         for(dx = -1; dx <= 1; dx++) {
@@ -68,15 +67,12 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t dNode[GRID_H
                 neighborX = dn->pos.x + dx;
                 neighborY = dn->pos.y + dy;
 
-                if(neighborX >= 0 && neighborX <GRID_HEIGHT &&
-                    neighborY >= 0 && neighborY <GRID_WIDTH){
+                if(neighborX >= 0 && neighborX < GRID_HEIGHT &&
+                    neighborY >= 0 && neighborY < GRID_WIDTH) {
 
-                    neighbor = &dNode[neighborX][neighborY];
-                    currCost = neighbor->npc->cost(*neighbor->tile);
-                    
+                    neighbor = &dNode[neighborX][neighborY];                    
                     if(neighbor->hn){
                         newCost = dn->cost + npc->cost(*dn->tile);
-
 
                         if(newCost < neighbor->cost) {
                             neighbor->cost = newCost;
@@ -94,7 +90,7 @@ void print_dijkstra_map(dijk_map_t dNode[GRID_HEIGHT][GRID_WIDTH]) {
     int i, j;
     for (i = 0; i < GRID_HEIGHT; i++) {
         for (j = 0; j < GRID_WIDTH; j++) {
-            if (dNode[i][j].cost ==INT32_MAX) {
+            if (dNode[i][j].cost == INT32_MAX) {
                 printf("  ");
             } else {
                 printf("%02d ", dNode[i][j].cost % 100);

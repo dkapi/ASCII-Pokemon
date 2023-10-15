@@ -40,7 +40,7 @@ typedef struct Gates
 
 typedef struct terrain_map 
 {
-    char grid[GRID_HEIGHT][GRID_WIDTH];
+    struct tile_s* grid[GRID_HEIGHT][GRID_WIDTH];
     Location_t location;
     Gates_t gates;
 } terrain_map_t;
