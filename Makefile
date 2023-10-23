@@ -6,7 +6,7 @@ RM = rm -f
 CFLAGS = -Wall  -ggdb -funroll-loops
 # CXXFLAGS = -Wall -Werror -ggdb -funroll-loops -DTERM=$(TERM)
 
-LDFLAGS = -lm
+LDFLAGS = -lm -lncurses
 
 BIN = worldgen
 OBJS = voronoi.o heap.o dijkstra.o characters.o worldgen.o

@@ -222,7 +222,7 @@ uint32_t rival_cost(struct tile_s tile)
     case WaterTile:
         return INT32_MAX;
     case EdgeTile:
-            return INT32_MAX;
+        return INT32_MAX;
     default:
         // should not reach here
         return INT32_MAX;
