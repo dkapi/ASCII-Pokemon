@@ -8,6 +8,8 @@
 #include "voronoi.h"
 #include "characters.h"
 #include "dijkstra.h"
+#include "io.h"
+
 
 
 terrain_map_t* worldMap[WORLD_HEIGHT][WORLD_WIDTH];
@@ -362,15 +364,21 @@ int main(int argc, char *argv[])
     worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
     gates = currGrid->gates;
    // print_map(worldMap[currLoc.x][currLoc.y]);
+    
+    // create dijkstra cost maps for npc's that need em
+    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
+    //dijkstra_map(currGrid, &pc.location, rival.costMap, &rival);
+    //print_dijkstra_map(hiker.costMap);
+    //print_dijkstra_map(rival.costMap);
+    // array to hold all the npc's that will spawn per Grid decided on the numTrainers flag, or default
+    struct character_s npc_arr[] = {hiker, /* rival, */ pacer, wanderer, explorer};
+    // npc movement.
+     //npc_movement_loop(currGrid, npc_arr);
 
 
-    // Ncurses initialization code
-    initscr();
-    raw();
-    noecho();
-    curs_set(0);
-    keypad(stdscr, TRUE);
-    nodelay(stdscr, FALSE);
+
+    init_curses();
+
 
     for(int i = 0; i < GRID_HEIGHT; i++) {
         for(int j = 0; j < GRID_WIDTH; j++) {
@@ -388,16 +396,17 @@ int main(int argc, char *argv[])
         switch(ch) {
             case '7':
             case 'y': 
-                if(currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != '%' || currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != '^' ||
-                   currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != '~' || currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 'h' || 
-                   currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 'r' || currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 's' ||
-                   currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 'e' || currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 'w'){
+                if(currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != '%' && currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != '^' &&
+                   currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != '~' && currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 'h' && 
+                   currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 'r' && currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 's' &&
+                   currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 'e' && currGrid->grid[pc.location.x-1][pc.location.y-1]->ascii != 'w'){
                     
                     currGrid->grid[pc.location.x][pc.location.y] = pc.standing;
                     pc.standing = currGrid->grid[pc.location.x-1][pc.location.y-1];
                     pc.location.x = pc.location.x-1;
                     pc.location.y = pc.location.y-1;
                     currGrid->grid[pc.location.x][pc.location.y] = &pc.self;
+                    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
                     clear();
 
                    }
@@ -405,16 +414,17 @@ int main(int argc, char *argv[])
             case '8':
             case 'k':
                 //code to move pc one cell up
-                if(currGrid->grid[pc.location.x-1][pc.location.y]->ascii != '%' || currGrid->grid[pc.location.x-1][pc.location.y]->ascii != '^' ||
-                   currGrid->grid[pc.location.x-1][pc.location.y]->ascii != '~' || currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 'h' || 
-                   currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 'r' || currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 's' ||
-                   currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 'e' || currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 'w'){
+                if(currGrid->grid[pc.location.x-1][pc.location.y]->ascii != '%' && currGrid->grid[pc.location.x-1][pc.location.y]->ascii != '^' &&
+                   currGrid->grid[pc.location.x-1][pc.location.y]->ascii != '~' && currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 'h' && 
+                   currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 'r' && currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 's' &&
+                   currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 'e' && currGrid->grid[pc.location.x-1][pc.location.y]->ascii != 'w'){
                     
                     currGrid->grid[pc.location.x][pc.location.y] = pc.standing;
                     pc.standing = currGrid->grid[pc.location.x-1][pc.location.y];
                     pc.location.x = pc.location.x-1;
                     pc.location.y = pc.location.y;
                     currGrid->grid[pc.location.x][pc.location.y] = &pc.self;
+                    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
                     clear();
                    
                    }
@@ -422,154 +432,166 @@ int main(int argc, char *argv[])
             case '9':
             case 'u':
                 //code to move pc one cel to the upper right
-                if(currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != '%' || currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != '^' ||
-                   currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != '~' || currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 'h' || 
-                   currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 'r' || currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 's' ||
-                   currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 'e' || currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 'w'){
+                if(currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != '%' && currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != '^' &&
+                   currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != '~' && currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 'h' && 
+                   currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 'r' && currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 's' &&
+                   currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 'e' && currGrid->grid[pc.location.x-1][pc.location.y+1]->ascii != 'w'){
                     
                     currGrid->grid[pc.location.x][pc.location.y] = pc.standing;
                     pc.standing = currGrid->grid[pc.location.x-1][pc.location.y+1];
                     pc.location.x = pc.location.x-1;
                     pc.location.y = pc.location.y+1;
                     currGrid->grid[pc.location.x][pc.location.y] = &pc.self;
+                    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
                     clear();
                    }
                 break;
             case '6':
             case 'l':
                 //code to move pc one cell to the right
-                if(currGrid->grid[pc.location.x][pc.location.y+1]->ascii != '%' || currGrid->grid[pc.location.x][pc.location.y+1]->ascii != '^' ||
-                   currGrid->grid[pc.location.x][pc.location.y+1]->ascii != '~' || currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 'h' || 
-                   currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 'r' || currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 's' ||
-                   currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 'e' || currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 'w'){
+                if(currGrid->grid[pc.location.x][pc.location.y+1]->ascii != '%' && currGrid->grid[pc.location.x][pc.location.y+1]->ascii != '^' &&
+                   currGrid->grid[pc.location.x][pc.location.y+1]->ascii != '~' && currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 'h' && 
+                   currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 'r' && currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 's' &&
+                   currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 'e' && currGrid->grid[pc.location.x][pc.location.y+1]->ascii != 'w'){
                     
                     currGrid->grid[pc.location.x][pc.location.y] = pc.standing;
                     pc.standing = currGrid->grid[pc.location.x][pc.location.y+1];
                     pc.location.x = pc.location.x;
                     pc.location.y = pc.location.y+1;
                     currGrid->grid[pc.location.x][pc.location.y] = &pc.self;
+                    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
                     clear();
                    }
                 break;
             case '3':
             case 'n':
                 //code to move pc one cell to lower right
-                if(currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != '%' || currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != '^' ||
-                   currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != '~' || currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 'h' || 
-                   currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 'r' || currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 's' ||
-                   currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 'e' || currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 'w'){
+                if(currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != '%' && currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != '^' &&
+                   currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != '~' && currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 'h' && 
+                   currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 'r' && currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 's' &&
+                   currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 'e' && currGrid->grid[pc.location.x+1][pc.location.y+1]->ascii != 'w'){
                     
                     currGrid->grid[pc.location.x][pc.location.y] = pc.standing;
                     pc.standing = currGrid->grid[pc.location.x+1][pc.location.y+1];
                     pc.location.x = pc.location.x+1;
                     pc.location.y = pc.location.y+1;
                     currGrid->grid[pc.location.x][pc.location.y] = &pc.self;
+                    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
                     clear();
                    }
                 break;
             case '2':
             case 'j':
                 //code to move pc cone cell down
-                if(currGrid->grid[pc.location.x+1][pc.location.y]->ascii != '%' || currGrid->grid[pc.location.x+1][pc.location.y]->ascii != '^' ||
-                   currGrid->grid[pc.location.x+1][pc.location.y]->ascii != '~' || currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 'h' || 
-                   currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 'r' || currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 's' ||
-                   currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 'e' || currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 'w'){
+                if(currGrid->grid[pc.location.x+1][pc.location.y]->ascii != '%' && currGrid->grid[pc.location.x+1][pc.location.y]->ascii != '^' &&
+                   currGrid->grid[pc.location.x+1][pc.location.y]->ascii != '~' && currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 'h' && 
+                   currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 'r' && currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 's' &&
+                   currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 'e' && currGrid->grid[pc.location.x+1][pc.location.y]->ascii != 'w'){
                     
                     currGrid->grid[pc.location.x][pc.location.y] = pc.standing;
                     pc.standing = currGrid->grid[pc.location.x+1][pc.location.y];
                     pc.location.x = pc.location.x+1;
                     pc.location.y = pc.location.y;
                     currGrid->grid[pc.location.x][pc.location.y] = &pc.self;
+                    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
                     clear();
                    }
                 break;
             case '1':
             case 'b':
                 //code to move pc one cell to lower left
-                if(currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != '%' || currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != '^' ||
-                   currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != '~' || currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 'h' || 
-                   currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 'r' || currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 's' ||
-                   currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 'e' || currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 'w'){
+                if(currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != '%' && currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != '^' &&
+                   currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != '~' && currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 'h' && 
+                   currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 'r' && currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 's' &&
+                   currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 'e' && currGrid->grid[pc.location.x+1][pc.location.y-1]->ascii != 'w'){
                     
                     currGrid->grid[pc.location.x][pc.location.y] = pc.standing;
                     pc.standing = currGrid->grid[pc.location.x+1][pc.location.y-1];
                     pc.location.x = pc.location.x+1;
                     pc.location.y = pc.location.y-1;
                     currGrid->grid[pc.location.x][pc.location.y] = &pc.self;
+                    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
                     clear();
                    }
                 break;
             case '4':
             case 'h':
                 //code to move pc one cell to left
-                if(currGrid->grid[pc.location.x][pc.location.y-1]->ascii != '%' || currGrid->grid[pc.location.x][pc.location.y-1]->ascii != '^' ||
-                   currGrid->grid[pc.location.x][pc.location.y-1]->ascii != '~' || currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 'h' || 
-                   currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 'r' || currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 's' ||
-                   currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 'e' || currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 'w'){
+                if(currGrid->grid[pc.location.x][pc.location.y-1]->ascii != '%' && currGrid->grid[pc.location.x][pc.location.y-1]->ascii != '^' &&
+                   currGrid->grid[pc.location.x][pc.location.y-1]->ascii != '~' && currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 'h' && 
+                   currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 'r' && currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 's' &&
+                   currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 'e' && currGrid->grid[pc.location.x][pc.location.y-1]->ascii != 'w'){
                     
                     currGrid->grid[pc.location.x][pc.location.y] = pc.standing;
                     pc.standing = currGrid->grid[pc.location.x][pc.location.y-1];
                     pc.location.x = pc.location.x;
                     pc.location.y = pc.location.y-1;
                     currGrid->grid[pc.location.x][pc.location.y] = &pc.self;
+                    dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
                     clear();
                    }
                 break;
             case '>':
-                if(pc.standing->ascii == 'C' || pc.standing->ascii == 'M'){
-                    clear();
-                    mvaddstr(0,1,"welcome to the PokeMart/Center, this will be implimented later :)");
-                    while(ch != '<'){
-                        continue;
+            // tried to add this to a func to call from in io.c, but it just dosent work idk why says statement func unsused, same for pokemart
+            if(pc.standing->ascii == 'C'){
+                clear();
+                printw("Welcome to the Pokemon Center, would you like me to heal your Pokemon? --Nurse");
+                refresh();
+                int ch;
+                int num = 1;
+                while (num == 1) {  // Use an infinite loop and break when '<' is pressed
+                    ch = getch();
+                    if (ch == '<') {
+                        num =0;
                     }
                 }
+            } else if(pc.standing->ascii == 'M'){
+                clear();
+                printw("Welcome to the Pokemart. Could I interest you in some Pokeballs?");
+                refresh();
+                int ch;
+                int num = 1;
+                while (num == 1) {  // Use an infinite loop and break when '<' is pressed
+                    ch = getch();
+                    if (ch == '<') {
+                        num =0;
+                    }
+                }
+            }
                 break;
-            case '5':
-            case ' ':
-            case '.':
-                //code for PC to rest a turn, meaning we dont move but rest of gamemap updates if needed
-                break;
-            case 't':
-                //code to bring up list of trainers/npc
-                break;
-            case KEY_UP:
-                // if trainer list is to large to fit on screen size of 80x24 then this will scroll up the list
-                break;
-            case KEY_DOWN:
-                // if trainer list is to large to fit on screen size of 80x24 then this will scroll down the list
-                break;
-            case 27:
-                // exits the trainer list thing
-                break;
+            // case '5':
+            // case ' ':
+            // case '.':
+            //     //code for PC to rest a turn, meaning we dont move but rest of gamemap updates if needed
+            //     break;
+            // case 't':
+            //     //code to bring up list of trainers/npc
+            //     break;
+            // case KEY_UP:
+            //     // if trainer list is to large to fit on screen size of 80x24 then this will scroll up the list
+            //     break;
+            // case KEY_DOWN:
+            //     // if trainer list is to large to fit on screen size of 80x24 then this will scroll down the list
+            //     break;
+            // case 27:
+            //     // exits the trainer list thing
+            //     break;
             case 'q':
             case 'Q':
                 quit = 0;
                 break;
             default:
-                // whatever key was typed is not in use, dosent do anything
+                // whatever key was typed is not in use, dosent do anything 
                 break;
         } 
-            for(int i = 0; i < GRID_HEIGHT; i++) {
-                for(int j = 0; j < GRID_WIDTH; j++) {
-                    mvaddch(i,j, currGrid->grid[i][j]->ascii);
-                }
-            }
-            refresh();
+            io_print_grid(*currGrid);
     }
 
     endwin();
 
     // printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
 
-    // // create dijkstra cost maps for npc's that need em
-    // dijkstra_map(currGrid, &pc.location, hiker.costMap, &hiker);
-    // //dijkstra_map(currGrid, &pc.location, rival.costMap, &rival);
-    // //print_dijkstra_map(hiker.costMap);
-    // //print_dijkstra_map(rival.costMap);
-    // // array to hold all the npc's that will spawn per Grid decided on the numTrainers flag, or default
-    // struct character_s npc_arr[] = {hiker, /* rival, */ pacer, wanderer, explorer};
-    // // npc movement.
-    //  npc_movement_loop(currGrid, npc_arr);
+    
 
 
 

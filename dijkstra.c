@@ -18,7 +18,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t dNode[GRID_H
     int i = 0; 
     int j = 0;
     uint32_t initialized = 0;
-    dijk_map_t *dn;
+    dijk_map_t *dn = NULL;
     heap_t h;
 
     //initialize the dNode to simulate given grid size, and set stuff
@@ -60,7 +60,7 @@ void dijkstra_map(terrain_map_t *map, Location_t *start, dijk_map_t dNode[GRID_H
         dn->hn = NULL;
         int dx= 0, dy= 0, neighborX =0, neighborY = 0;
         uint32_t newCost = 0;
-        dijk_map_t *neighbor;
+        dijk_map_t *neighbor = NULL;
         
         for(dx = -1; dx <= 1; dx++) {
             for(dy = -1; dy <= 1; dy++){
