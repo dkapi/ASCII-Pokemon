@@ -16,3 +16,5 @@ going step by step I.E. n,s,e,w all work perfectly fine
  grid, but im getting a weird seg fault after that logic, so while that part
  of the assignment is implemented in lines 58 of worldgen.c and it works. 
  until later code is reached...
+
+ TODO: fix main and upload the actual working game 😆
