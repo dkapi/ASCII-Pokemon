@@ -1,197 +1,392 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <termios.h>
+#include <unistd.h>
+
 #include "worldgen.h"
 #include "voronoi.h"
 #include "characters.h"
 #include "dijkstra.h"
 
-void print_map(terrain_map_t *map) // TODO: take grid not map
+/* ------------------------------------------------------------------------- *
+ * Terminal: raw mode so keys register instantly (no Enter required).        *
+ * ------------------------------------------------------------------------- */
+static struct termios saved_termios;
+
+static void enable_raw_mode(void)
 {
-    for(int i = 0; i < GRID_HEIGHT; i++) {
-        for(int j = 0; j < GRID_WIDTH; j++) {
-            char *color = "";
-            switch (map->grid[i][j]) {
-                case '%':
-                    color = MAGENTA;
-                    break;
-                case '.':
-                    color = YELLOW;
-                    break;
-                case '~':
-                    color = BLUE;
-                    break;
-                case '^':
-                    color = GREEN;
-                    break;
-                case ':':
-                    color = GREEN;
-                    break;
-                case '#':
-                    color = BROWN;
-                    break;
-                case 'C':
-                    color = RED;
-                    break;
-                case 'M':
-                    color = LBLUE;
-                    break;
-                case '@': 
-                    color = WHITE;
-                    break;
-                default:
-                    // unreachable
-                    fprintf(stderr, "unhandled color case\n");
-                    break;
-            }
-            printf("%s%c", color, map->grid[i][j]);
-        }
-        putchar('\n');
-    }
+  struct termios raw;
+  tcgetattr(STDIN_FILENO, &saved_termios);
+  raw = saved_termios;
+  raw.c_lflag &= ~(ICANON | ECHO);
+  raw.c_cc[VMIN] = 0;
+  raw.c_cc[VTIME] = 1;   /* 0.1 s read timeout */
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
-static inline void get_input(int n, char* buf)
+static void restore_terminal(void)
 {
-    fgets(buf, n, stdin);
+  tcsetattr(STDIN_FILENO, TCSAFLUSH, &saved_termios);
 }
 
-Location_t handle_input(int n, char* buf, Location_t loc, Gates_t* gates, bool* quit)
+/* Arrow keys arrive as ESC [ A/B/C/D.  Codes sit above 0xFF so they can't
+ * collide with printable ASCII. */
+enum { K_UP = 0x100, K_DOWN, K_LEFT, K_RIGHT };
+
+/* Returns the key value, or 0 when no key was pressed within the timeout. */
+static int read_key(void)
 {
-    switch((int)buf[0]) {
-        case 'n':
-        if(loc.y == 400) { printf("you've reached the border pokemon master!\n");
-            break;
-        }
-            loc.y += loc.y >= 0 ? 1 : 0;
-            gates->bottom = (Location_t) { .x = gates->bottom.x, .y = gates->top.y};
-            gates->top = (Location_t){ .x = 0, .y = 0 };
-            gates->left = (Location_t){ .x = 0, .y = 0 };
-            gates->right = (Location_t){ .x = 0, .y = 0 };
-            break; 
-        case 's':
-        if (loc.y == 0) {  printf("you've reached the border pokemon master!\n");
-             break;
-        }
-            loc.y += loc.y < 401 ? -1 : 0;
-            gates->top = (Location_t){ .x = gates->top.x, .y = gates->bottom.y };
-            gates->bottom = (Location_t){ .x = 0, .y = 0 };
-            gates->left = (Location_t){ .x = 0, .y = 0 };
-            gates->right = (Location_t){ .x = 0, .y = 0 };
-            break;
-        case 'e':
-        if(loc.x == 400) { printf("you've reached the border pokemon master!\n");
-            break;
-        }
-            loc.x += loc.x >= 0 ? 1 : 0;
-            gates->left = (Location_t){ .x = gates->right.x, .y = gates->left.y };
-            gates->bottom = (Location_t){ .x = 0, .y = 0 };
-            gates->top = (Location_t){ .x = 0, .y = 0 };
-            gates->right = (Location_t){ .x = 0, .y = 0 };
-            break;
-        case 'w':
-        if(loc.x == 0) { printf("you've reached the border pokemon master!\n");
-            break;
-        }
-            loc.x += loc.x < 401 ? -1 : 0;
-            gates->right = (Location_t){ .x = gates->left.x, .y = gates->right.y };
-            gates->bottom = (Location_t){ .x = 0, .y = 0 };
-            gates->top = (Location_t){ .x = 0, .y = 0 };
-            gates->left = (Location_t){ .x = 0, .y = 0 };
-            break;
-       case 'f':
-            int x,y;
-            if(sscanf(buf, "f %d %d", &x, &y) == 2){
-                if((-200 <= x && x <= 200) && (-200 <= y && y <= 200)) {
-                    loc.x = x + 200;
-                    loc.y = y + 200;
-                    *gates = (Gates_t){0};
-                }
-                else {
-                    printf("you cant fly that far on your pidgey!\n");
-                }
-            }
-            break;
-        case 'q':
-            *quit = true;
-            printf("But how are you going to be the very best if you quit..\n");
-            break;
-    }
-    return loc;
-}
+  unsigned char b, b2, b3;
+  ssize_t n = read(STDIN_FILENO, &b, 1);
 
-
-int main(void)
-{
-    (void)tiles[TileCount];
-    (void)pathTile;
-    srand(time(NULL));
-    terrain_map_t* worldMap[WORLD_HEIGHT][WORLD_WIDTH];
-
-    for(int i = 0; i < WORLD_HEIGHT; ++i) {
-        for(int j = 0; j < WORLD_WIDTH; ++j) {
-            worldMap[i][j] = NULL;
-        }
-    }
-
-    terrain_map_t* currGrid = (terrain_map_t*)malloc(sizeof(terrain_map_t));
-    Location_t currLoc = { .x = 200, .y = 200 };
-    currGrid->location = currLoc;
-    Gates_t gates = {0};
-    generate_voronoi_map(currGrid, gates);
-    Location_t PC = place_character(currGrid);
-    worldMap[currGrid->location.x][currGrid->location.y] = currGrid;
-    gates = currGrid->gates;
-    print_map(worldMap[currLoc.x][currLoc.y]);
-    printf("%scurrent location: (%d,%d) movement input: ",WHITE,currLoc.x - 200,currLoc.y - 200 );
-
-    //printing hiker cost map    
-    printf("\n hiker cost map\n");
-    static dijk_map_t hikerCostMap[GRID_HEIGHT][GRID_WIDTH];
-    struct character_s hiker = {.ascii = 'H', .location = {.x = 0, .y = 0}, .tile =  &mountainTile, .cost = hiker_cost};
-    dijkstra_map(currGrid, &PC, hikerCostMap, &hiker);
-    print_dijkstra_map(hikerCostMap);
-
-
-    //printing Rival cost map
-    printf("\nrival cost map\n");
-    static dijk_map_t rivalCostMap[GRID_HEIGHT][GRID_WIDTH];
-    struct character_s rival = {.ascii = 'R', .location = {.x = 0, .y = 0}, .tile =  &clearingTile, .cost = rival_cost};
-    dijkstra_map(currGrid, &PC, rivalCostMap, &rival);
-    print_dijkstra_map(rivalCostMap);
-    
-
-
-    char userInput[32];
-    bool shouldQuit = false;
-    while(!shouldQuit) {
-        size_t input_n = sizeof(userInput)/sizeof(userInput[0]);
-        get_input(input_n, &userInput[0]);
-        Location_t newLoc = handle_input(input_n, &userInput[0], currLoc, &gates, &shouldQuit);
-        if((currLoc.x != newLoc.x || currLoc.y != newLoc.y) && worldMap[newLoc.x][newLoc.y] == NULL) {
-            terrain_map_t* newGrid = (terrain_map_t*)malloc(sizeof(terrain_map_t));
-            newGrid->location = newLoc;
-            generate_voronoi_map(newGrid, gates);
-            worldMap[newGrid->location.x][newGrid->location.y] = newGrid;
-            currGrid = newGrid;
-        }
-        print_map(worldMap[newLoc.x][newLoc.y]);
-        printf("%scurrent location: (%d,%d), movment input: %c \n", WHITE,
-                (newLoc.x < 0 ? newLoc.x +200 : newLoc.x -200),
-                (newLoc.y < 0 ? newLoc.y +200 : newLoc.y -200),
-                userInput[0]);
-        currLoc = newLoc;
-        gates = currGrid->gates;
-
-    }
-
-    for(int i =0; i < WORLD_HEIGHT; i++) {
-        for(int j =0; j < WORLD_WIDTH; j++) {
-            if(worldMap[i][j]){
-            free(worldMap[i][j]);
-            worldMap[i][j] = NULL;
-            }
-        }
+  if (n != 1) {
+    /* 0 bytes on a tty just means "no key yet" (timeout); on a pipe or
+     * file it means end-of-input, which we report as -1. */
+    if (n == 0) {
+      return isatty(STDIN_FILENO) ? 0 : -1;
     }
     return 0;
+  }
+  if (b != '\033') {
+    return b;
+  }
+  if (read(STDIN_FILENO, &b2, 1) != 1) return '\033';
+  if (b2 != '[') return '\033';
+  if (read(STDIN_FILENO, &b3, 1) != 1) return '\033';
+  switch (b3) {
+    case 'A': return K_UP;
+    case 'B': return K_DOWN;
+    case 'C': return K_RIGHT;
+    case 'D': return K_LEFT;
+    default:  return '\033';
+  }
+}
+
+static void wait_any_key(void)
+{
+  while (read_key() == 0) {
+    /* spin until a key arrives */
+  }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Rendering.                                                                *
+ * ------------------------------------------------------------------------- */
+void print_map(terrain_map_t *map)
+{
+  int i, j;
+
+  for (i = 0; i < GRID_HEIGHT; i++) {
+    for (j = 0; j < GRID_WIDTH; j++) {
+      const char *color = "";
+      char c = map->grid[i][j];
+
+      if (i == pc.location.x && j == pc.location.y) {
+        c = pc.ascii;
+        color = WHITE;
+      } else {
+        switch (c) {
+          case '%': color = MAGENTA; break;
+          case '.': color = YELLOW;  break;
+          case '~': color = BLUE;    break;
+          case '^': color = GREEN;   break;
+          case ':': color = GREEN;   break;
+          case '#': color = BROWN;   break;
+          case 'C': color = RED;     break;
+          case 'M': color = LBLUE;   break;
+          default:
+            fprintf(stderr, "unhandled color case\n");
+            break;
+        }
+      }
+      printf("%s%c", color, c);
+    }
+    putchar('\n');
+  }
+  printf("%s", RESET);
+}
+
+/* ------------------------------------------------------------------------- *
+ * Input handling.                                                           *
+ * ------------------------------------------------------------------------- */
+
+/* Move one world-map in direction 'n'/'s'/'e'/'w'.  Updates *loc in place
+ * and returns true if the position changed (false = blocked by the edge). */
+static bool move_char(Location_t *loc, Gates_t *gates, int dir)
+{
+  switch (dir) {
+    case 'n':   /* north: +y */
+      if (loc->y == 400) return false;
+      loc->y++;
+      gates->bottom = (Location_t) { GRID_HEIGHT - 1, gates->top.y };
+      gates->top = gates->left = gates->right = (Location_t) { 0, 0 };
+      return true;
+
+    case 's':   /* south: -y */
+      if (loc->y == 0) return false;
+      loc->y--;
+      gates->top = (Location_t) { 0, gates->bottom.y };
+      gates->bottom = gates->left = gates->right = (Location_t) { 0, 0 };
+      return true;
+
+    case 'e':   /* east: +x */
+      if (loc->x == 400) return false;
+      loc->x++;
+      gates->left = (Location_t) { gates->right.x, 0 };
+      gates->top = gates->bottom = gates->right = (Location_t) { 0, 0 };
+      return true;
+
+    case 'w':   /* west: -x */
+      if (loc->x == 0) return false;
+      loc->x--;
+      gates->right = (Location_t) { gates->left.x, GRID_WIDTH - 1 };
+      gates->top = gates->bottom = gates->left = (Location_t) { 0, 0 };
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+/* Read an integer from the terminal, echoing as the user types (raw mode
+ * disables echo, so we do it manually). */
+static int read_int_prompt(const char *prompt)
+{
+  char buf[16];
+  int i = 0;
+  unsigned char c;
+
+  printf("%s", prompt);
+  fflush(stdout);
+
+  for (;;) {
+    ssize_t n = read(STDIN_FILENO, &c, 1);
+    if (n < 1) continue;
+    if (c == '\n' || c == '\r') break;
+    if ((c == 127 || c == 8) && i > 0) {   /* backspace */
+      i--;
+      printf("\b \b");
+      fflush(stdout);
+      continue;
+    }
+    if (i < (int) sizeof(buf) - 1) {
+      buf[i++] = (char) c;
+      putchar(c);
+      fflush(stdout);
+    }
+  }
+  buf[i] = '\0';
+  putchar('\n');
+  return atoi(buf);
+}
+
+static void print_help(void)
+{
+  printf("%s", CLEARSCREEN);
+  printf("========== ASCII-Pokemon : controls ==========\n\n");
+  printf("  move          arrow keys, or n / s / e / w\n");
+  printf("  fly           f  (then enter x and y, -200..200)\n");
+  printf("  help          h or ?\n");
+  printf("  quit          q  (or Ctrl-C)\n\n");
+  printf("  The world is 401 x 401 maps; the center is (0,0).\n");
+  printf("  '@' is you.  '%%' mountain, '^' tree, ':' tall grass,\n");
+  printf("  '~' water, '#' path, 'M' mart, 'C' pokemon center.\n\n");
+  printf("press any key to return to the game...\n");
+  fflush(stdout);
+  wait_any_key();
+}
+
+/* ------------------------------------------------------------------------- *
+ * Main.                                                                     *
+ * ------------------------------------------------------------------------- */
+int main(int argc, char *argv[])
+{
+  int i, j;
+  bool debug = false;
+
+  for (i = 1; i < argc; i++) {
+    if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--debug")) {
+      debug = true;
+    }
+  }
+
+  srand(time(NULL));
+
+  /* Allocated on the heap instead of the ~1.2 MB stack frame it used to
+   * need.  worldMap[x][y] still works unchanged. */
+  terrain_map_t *(*worldMap)[WORLD_WIDTH] =
+    calloc(WORLD_HEIGHT, sizeof *worldMap);
+  assert(worldMap);
+
+  terrain_map_t *currGrid = malloc(sizeof *currGrid);
+  assert(currGrid);
+
+  Location_t currLoc = { .x = 200, .y = 200 };
+  currGrid->location = currLoc;
+  Gates_t gates = { 0 };
+  generate_voronoi_map(currGrid, gates);
+  worldMap[currLoc.x][currLoc.y] = currGrid;
+  gates = currGrid->gates;
+
+  place_character(currGrid);
+
+  /* Optional debug dump of the hiker/rival Dijkstra cost maps. */
+  if (debug) {
+    printf("\n hiker cost map\n");
+    static dijk_map_t hikerCostMap[GRID_HEIGHT][GRID_WIDTH];
+    struct character_s hiker = {
+      .ascii = 'H',
+      .location = { 0, 0 },
+      .tile = &mountainTile,
+      .cost = hiker_cost,
+    };
+    dijkstra_map(currGrid, &pc.location, hikerCostMap, &hiker);
+    print_dijkstra_map(hikerCostMap);
+
+    printf("\nrival cost map\n");
+    static dijk_map_t rivalCostMap[GRID_HEIGHT][GRID_WIDTH];
+    struct character_s rival = {
+      .ascii = 'R',
+      .location = { 0, 0 },
+      .tile = &clearingTile,
+      .cost = rival_cost,
+    };
+    dijkstra_map(currGrid, &pc.location, rivalCostMap, &rival);
+    print_dijkstra_map(rivalCostMap);
+  }
+
+  printf("%s", CLEARSCREEN);
+  print_map(currGrid);
+  printf("%scurrent location: (%d,%d)   [?=help]%s\n",
+         WHITE, currLoc.x - 200, currLoc.y - 200, RESET);
+  fflush(stdout);
+
+  enable_raw_mode();
+
+  char status[96];
+  bool shouldQuit = false;
+  while (!shouldQuit) {
+    int key = read_key();
+    bool moved = false;
+    Location_t newLoc = currLoc;
+
+    status[0] = '\0';
+
+    switch (key) {
+      case 0:
+        continue;             /* no key yet */
+
+      case -1:                /* stdin reached end-of-input */
+        shouldQuit = true;
+        break;
+
+      case 'q':
+      case 'Q':
+        shouldQuit = true;
+        break;
+
+      case 'h':
+      case '?':
+        print_help();
+        break;
+
+      case 'f': {
+        int x = read_int_prompt("fly to x [-200, 200]: ");
+        int y = read_int_prompt("fly to y [-200, 200]: ");
+        if (x >= -200 && x <= 200 && y >= -200 && y <= 200) {
+          newLoc.x = x + 200;
+          newLoc.y = y + 200;
+          gates = (Gates_t) { 0 };
+          moved = true;
+        } else {
+          snprintf(status, sizeof status,
+                   "you cant fly that far on your pidgey!");
+        }
+        break;
+      }
+
+      case 'n': case K_UP:
+        if (!move_char(&newLoc, &gates, 'n')) {
+          snprintf(status, sizeof status,
+                   "you've reached the border pokemon master!");
+        } else {
+          moved = true;
+        }
+        break;
+
+      case 's': case K_DOWN:
+        if (!move_char(&newLoc, &gates, 's')) {
+          snprintf(status, sizeof status,
+                   "you've reached the border pokemon master!");
+        } else {
+          moved = true;
+        }
+        break;
+
+      case 'e': case K_RIGHT:
+        if (!move_char(&newLoc, &gates, 'e')) {
+          snprintf(status, sizeof status,
+                   "you've reached the border pokemon master!");
+        } else {
+          moved = true;
+        }
+        break;
+
+      case 'w': case K_LEFT:
+        if (!move_char(&newLoc, &gates, 'w')) {
+          snprintf(status, sizeof status,
+                   "you've reached the border pokemon master!");
+        } else {
+          moved = true;
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    if (shouldQuit) {
+      break;
+    }
+
+    if (moved) {
+      if (!worldMap[newLoc.x][newLoc.y]) {
+        terrain_map_t *newGrid = malloc(sizeof *newGrid);
+        assert(newGrid);
+        newGrid->location = newLoc;
+        generate_voronoi_map(newGrid, gates);
+        worldMap[newLoc.x][newLoc.y] = newGrid;
+      }
+      currGrid = worldMap[newLoc.x][newLoc.y];
+      place_character(currGrid);
+      currLoc = newLoc;
+      gates = currGrid->gates;
+    }
+
+    printf("%s", CLEARSCREEN);
+    print_map(currGrid);
+    printf("%scurrent location: (%d,%d)   [?=help]%s\n",
+           WHITE, currLoc.x - 200, currLoc.y - 200, RESET);
+    if (status[0]) {
+      printf("%s%s%s\n", YELLOW, status, RESET);
+    }
+    fflush(stdout);
+  }
+
+  restore_terminal();
+  printf("%s", CLEARSCREEN);
+  printf("But how are you going to be the very best if you quit..\n");
+
+  for (i = 0; i < WORLD_HEIGHT; i++) {
+    for (j = 0; j < WORLD_WIDTH; j++) {
+      free(worldMap[i][j]);
+    }
+  }
+  free(worldMap);
+
+  return 0;
 }

@@ -21,28 +21,26 @@
 #define WHITE   "\e[0;37m"
 #define BROWN   "\e[38;5;94m"
 #define LBLUE   "\e[38;5;33m"
+#define RESET   "\e[0m"
+#define CLEARSCREEN "\033[2J\033[H"
 
-typedef struct Location 
-{
-    int x;
-    int y;
+typedef struct Location {
+  int x;
+  int y;
 } Location_t;
 
-typedef struct Gates
-{
-    Location_t left;
-    Location_t right;
-    Location_t bottom;
-    Location_t top;
+typedef struct Gates {
+  Location_t left;
+  Location_t right;
+  Location_t bottom;
+  Location_t top;
 } Gates_t;
 
-typedef struct terrain_map 
-{
-    char grid[GRID_HEIGHT][GRID_WIDTH];
-    Location_t location;
-    Gates_t gates;
-    int visited, cost, distance;
+typedef struct terrain_map {
+  char grid[GRID_HEIGHT][GRID_WIDTH];
+  Location_t location;
+  Gates_t gates;
+  int visited, cost, distance;
 } terrain_map_t;
-
 
 #endif /* _WORLDGEN_H_ */

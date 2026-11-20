@@ -1,92 +1,36 @@
-/*
-   Tile Definitions
-*/
+/* Tile definitions.  The tile structs themselves live in tiles.c (one
+ * definition each) so every translation unit shares the same instances. */
 #ifndef _TILES_H
 #define _TILES_H
 
-
-// TODO: optimize size?
-// TODO: fix these names
-enum tile_e 
-{
-   TreeTile,
-   MountainTile,
-   TallGrass,
-   Clearing,
-   Path,
-   Water,
-   TileCount,
-   PokeMart,
-   PokeCenter,
+enum tile_e {
+  TreeTile,
+  MountainTile,
+  TallGrass,
+  Clearing,
+  Path,
+  Water,
+  TileCount,
+  PokeMart,
+  PokeCenter,
 };
 
-struct tile_s
-{
-   const char* name;
-   const char ascii;
-   const enum tile_e tile_idx;  // TODO: is this needed?
-   const float adjacency[TileCount];
+struct tile_s {
+  const char *name;
+  const char ascii;
+  const enum tile_e tile_idx;
 };
 
-static struct tile_s treeTile = 
-{
-   .name = "tree",
-   .ascii = '^',
-   .tile_idx = TreeTile,
-   .adjacency = {0.f},
-};
-
-static struct tile_s mountainTile = 
-{
-   .name = "mountain",
-   .ascii = '%',
-   .tile_idx = MountainTile,
-   .adjacency = {0.f},
-};
-
-static struct tile_s tallGrassTile = 
-{
-   .name = "tall-grass",
-   .ascii = ':',
-   .tile_idx = TallGrass,
-   .adjacency = {0.f},
-};
-
-static struct tile_s clearingTile = 
-{
-   .name = "clearing",
-   .ascii = '.',
-   .tile_idx = Clearing,
-   .adjacency = {0.f},
-};
-
-static struct tile_s pathTile =
-{
-    .name = "path",
-    .ascii = '#',
-    .tile_idx = Path,
-    .adjacency = {0.f},
-};
-
-static struct tile_s waterTile =
-{
-    .name = "water",
-    .ascii = '~',
-    .tile_idx = Water,
-    .adjacency = {0.f},
-};
-
+extern struct tile_s treeTile;
+extern struct tile_s mountainTile;
+extern struct tile_s tallGrassTile;
+extern struct tile_s clearingTile;
+extern struct tile_s pathTile;
+extern struct tile_s waterTile;
 extern struct tile_s pokemonCenter;
 extern struct tile_s pokeMart;
 
-
-static const struct tile_s* tiles[TileCount] =
-{
-   &treeTile,
-   &mountainTile,
-   &tallGrassTile,
-   &clearingTile,
-   &waterTile,   
-};
+/* Every map tile, indexed directly by tile_e (0 .. TileCount-1). */
+extern const struct tile_s *tiles[TileCount];
 
 #endif /* _TILES_H */
