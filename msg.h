@@ -17,6 +17,10 @@ const char *msg_recent(int back);
 /* Draw the last `lines` messages starting at screen row `row`. */
 void msg_show_banner(int row, int lines);
 
+/* Draw a full-width log pane: a divider line at `row`, then the last
+ * `height - 1` messages.  No-op when `height` is too small. */
+void msg_show_log(int row, int height);
+
 /* Full-screen, scrollable history.  Consumes keys via `getkey` until the
  * player dismisses it (q / space / enter / EOF). */
 void msg_hist_view(int (*getkey)(void));

@@ -29,7 +29,6 @@ static void init_curses(void)
   noecho();
   keypad(stdscr, TRUE);      /* arrow keys */
   curs_set(0);               /* hide cursor */
-  scrollok(stdscr, TRUE);    /* let dialogs scroll if they must */
   start_color();
   init_pair(CP_WHITE,   COLOR_WHITE,   COLOR_BLACK);
   init_pair(CP_CYAN,    COLOR_CYAN,    COLOR_BLACK);
@@ -94,21 +93,117 @@ void print_map(terrain_map_t *map)
   }
 }
 
-/* Classic roguelike layout: map on top, one status line, then a banner of
- * the last few events (fed by the message log). */
+/* ------------------------------------------------------------------------- *
+ * Panel layout: derived from the terminal size at startup.  The map stays a   *
+ * fixed 80x21 in the top-left; any extra width becomes a party + legend panel *
+ * on the right, and extra height becomes a message log across the bottom.     *
+ * On a terminal too small for the panes they are simply skipped.              *
+ * ------------------------------------------------------------------------- */
+static int panel_x;     /* first column of the right panel */
+static int panel_w;     /* right panel width */
+static bool show_panel; /* enough columns for the right panel? */
+static int log_y;       /* first row of the bottom message log */
+static int log_h;       /* message log height */
+static bool show_log;   /* enough rows for the log? */
+
+static void compute_layout(void)
+{
+  panel_x = GRID_WIDTH + 1;
+  panel_w = COLS - panel_x;
+  show_panel = (panel_w >= 40);   /* a party line + legend need ~39 cols */
+
+  log_y = GRID_HEIGHT + 1;
+  log_h = LINES - log_y;
+  show_log = (log_h >= 2);
+}
+
+/* Render a 10-segment HP bar into `out` (12 chars, NUL-terminated). */
+static void hp_bar(char out[13], int cur, int max)
+{
+  int filled = (max > 0) ? (cur * 10) / max : 0;
+  if (filled < 0)  filled = 0;
+  if (filled > 10) filled = 10;
+  out[0] = '[';
+  for (int i = 0; i < 10; i++) out[1 + i] = (i < filled) ? '#' : '.';
+  out[11] = ']';
+  out[12] = '\0';
+}
+
+static void draw_box(int y, int x, int h, int w)
+{
+  mvhline(y, x, '-', w);
+  mvhline(y + h - 1, x, '-', w);
+  mvvline(y, x, '|', h);
+  mvvline(y, x + w - 1, '|', h);
+  mvaddch(y, x, '+');
+  mvaddch(y, x + w - 1, '+');
+  mvaddch(y + h - 1, x, '+');
+  mvaddch(y + h - 1, x + w - 1, '+');
+}
+
+static void draw_party_panel(int y, int x, int w)
+{
+  draw_box(y, x, MAX_PARTY + 3, w);
+  mvprintw(y + 1, x + 2, "PARTY %d/%d", party_count, MAX_PARTY);
+
+  for (int i = 0; i < MAX_PARTY; i++) {
+    if (i < party_count) {
+      char bar[13];
+      hp_bar(bar, party[i].cur_hp, party[i].hp);
+      if (i == party_active) attron(A_BOLD);
+      mvprintw(y + 2 + i, x + 2, "%c%d) %-11s Lv.%-3d %s",
+               (i == party_active) ? '*' : ' ', i + 1,
+               species_name(party[i].species), party[i].level, bar);
+      if (i == party_active) attroff(A_BOLD);
+    } else {
+      mvprintw(y + 2 + i, x + 2, " %d) %-11s", i + 1, "(empty)");
+    }
+  }
+}
+
+static void draw_legend_panel(int y, int x, int w)
+{
+  static const char *leg[] = {
+    "% mtn    ^ tree   ~ water",
+    ": grass  # path   . clear",
+    "M mart   C center @ you",
+    "h hiker  r rival   p pacer",
+    "s sentry w wander  e explorer",
+    "m swimmer",
+  };
+  draw_box(y, x, 9, w);
+  mvprintw(y + 1, x + 2, "LEGEND");
+  for (int i = 0; i < 6; i++) {
+    mvprintw(y + 2 + i, x + 2, "%s", leg[i]);
+  }
+}
+
 static void draw_frame(terrain_map_t *g, Location_t loc)
 {
   clear();
   print_map(g);
-  mvprintw(GRID_HEIGHT, 0,
-           "loc (%d,%d)   $%d   %d potions   %d balls   party %d/%d   [h help m log p party]",
+
+  /* Full-width reverse-video status bar. */
+  char status[160];
+  snprintf(status, sizeof status,
+           " loc (%d,%d)  $%d  %d potions  %d balls  party %d/%d  [h help  m log  p party  q quit] ",
            loc.x - 200, loc.y - 200, bag.money, bag.potions, bag.pokeballs,
            party_count, MAX_PARTY);
 
-  int banner = 3;
-  if (LINES - (GRID_HEIGHT + 1) < banner) banner = LINES - (GRID_HEIGHT + 1);
-  if (banner < 0) banner = 0;
-  msg_show_banner(GRID_HEIGHT + 1, banner);
+  attron(A_REVERSE);
+  mvprintw(GRID_HEIGHT, 0, "%s", status);
+  for (int c = (int) strlen(status); c < COLS; c++) mvaddch(GRID_HEIGHT, c, ' ');
+  attroff(A_REVERSE);
+
+  if (show_panel) {
+    draw_party_panel(0, panel_x, panel_w);
+    draw_legend_panel(9, panel_x, panel_w);
+  }
+
+  if (show_log) {
+    msg_show_log(log_y, log_h);
+  }
+
   refresh();
 }
 
@@ -266,6 +361,7 @@ int main(int argc, char *argv[])
   }
 
   init_curses();
+  compute_layout();
 
   /* The starter is the first (and active) party member. */
   starter_pick(&party[0], read_key_blocking);

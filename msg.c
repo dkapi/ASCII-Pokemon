@@ -48,6 +48,17 @@ void msg_show_banner(int row, int lines)
   }
 }
 
+void msg_show_log(int row, int height)
+{
+  if (height < 2) {
+    return;
+  }
+  mvaddch(row, 0, '+');
+  mvhline(row, 1, '-', COLS - 2);
+  mvaddch(row, COLS - 1, '+');
+  msg_show_banner(row + 1, height - 1);
+}
+
 void msg_hist_view(int (*getkey)(void))
 {
   if (count == 0) {
