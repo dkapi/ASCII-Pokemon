@@ -114,10 +114,10 @@ static void draw_frame(terrain_map_t *g, Location_t loc)
 
 /* Reset the current map to a fresh PC + NPC population and rebuild the
  * hiker/rival distance maps for the new PC position. */
-static void setup_map(terrain_map_t *g)
+static void setup_map(terrain_map_t *g, Location_t pc_entry)
 {
   clear_characters(g);
-  place_pc(g);
+  place_pc(g, pc_entry);
   place_all_npcs(g);
   compute_dist_maps(g, &pc.location);
 }
@@ -175,6 +175,16 @@ static Location_t leave_map(int exit, Location_t loc, Gates_t *gates)
       break;
   }
   return loc;
+}
+
+/* After leave_map(), `gates` holds exactly one non-zero door: the
+ * connecting door on the map we are entering (the one the PC walked through). */
+static Location_t entry_gate(Gates_t g)
+{
+  if (g.top.x || g.top.y)       return g.top;
+  if (g.bottom.x || g.bottom.y) return g.bottom;
+  if (g.left.x || g.left.y)     return g.left;
+  return g.right;
 }
 
 /* ------------------------------------------------------------------------- *
@@ -243,7 +253,7 @@ int main(int argc, char *argv[])
   Gates_t gates = { 0 };
   terrain_map_t *currGrid = load_map(worldMap, currLoc, gates);
   gates = currGrid->gates;
-  setup_map(currGrid);
+  setup_map(currGrid, (Location_t) { 0, 0 });   /* first map: random spawn */
 
   /* Debug dump happens before ncurses takes over the terminal. */
   if (debug) {
@@ -319,7 +329,7 @@ int main(int argc, char *argv[])
           gates = (Gates_t) { 0 };
           currGrid = load_map(worldMap, currLoc, gates);
           gates = currGrid->gates;
-          setup_map(currGrid);
+          setup_map(currGrid, (Location_t) { 0, 0 });   /* fly: random spawn */
           transitioned = true;
         } else {
           msg("You can't fly that far on your pidgey!");
@@ -357,9 +367,10 @@ int main(int argc, char *argv[])
         pc.next_turn += REST_COST;
       } else if (res >= PC_MOVE_EXIT_UP) {
         currLoc = leave_map(res, currLoc, &gates);
+        Location_t entry = entry_gate(gates);   /* the door we walked through */
         currGrid = load_map(worldMap, currLoc, gates);
         gates = currGrid->gates;
-        setup_map(currGrid);
+        setup_map(currGrid, entry);
         transitioned = true;
       } else {
         /* Moved within the map: buildings, then tall-grass encounters. */

@@ -139,15 +139,22 @@ void clear_characters(terrain_map_t *map)
   memset(map->cmap, 0, sizeof map->cmap);
 }
 
-void place_pc(terrain_map_t *map)
+void place_pc(terrain_map_t *map, Location_t entry)
 {
   Location_t l;
   int attempts = 0;
 
-  do {
-    l.x = 1 + rand() % (GRID_HEIGHT - 3);
-    l.y = 1 + rand() % (GRID_WIDTH - 3);
-  } while (map->grid[l.x][l.y] != pathTile.ascii && ++attempts < 10000);
+  if (entry.x || entry.y) {
+    /* Entering through a connecting door: spawn on it.  The gate tile is
+     * always an unblocked path tile on the side we came from. */
+    l = entry;
+  } else {
+    /* No door (first map, or a fly): drop onto a random path tile. */
+    do {
+      l.x = 1 + rand() % (GRID_HEIGHT - 3);
+      l.y = 1 + rand() % (GRID_WIDTH - 3);
+    } while (map->grid[l.x][l.y] != pathTile.ascii && ++attempts < 10000);
+  }
 
   map->cmap[l.x][l.y] = &pc;
   pc.location.x = l.x;

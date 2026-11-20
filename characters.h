@@ -74,7 +74,9 @@ enum {
 };
 
 void clear_characters(terrain_map_t *map);
-void place_pc(terrain_map_t *map);
+/* Place the PC.  If `entry` is a non-zero gate location, spawn exactly there
+ * (the connecting door just walked through); otherwise pick a random path tile. */
+void place_pc(terrain_map_t *map, Location_t entry);
 void place_all_npcs(terrain_map_t *map);
 
 void move_npc(terrain_map_t *map, struct character_s *c);
