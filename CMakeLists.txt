@@ -16,6 +16,7 @@ add_executable(worldgen
   pokemon.c
   pokedex_gen12.c
   battle.c
+  msg.c
 )
 
 target_compile_options(worldgen PRIVATE -Wall -Wextra)

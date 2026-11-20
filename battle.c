@@ -3,15 +3,13 @@
 #include <ncurses.h>
 
 #include "battle.h"
+#include "msg.h"
 
 struct bag bag = { 3000, 5, 3 };   /* $3000, 5 balls, 3 potions to start */
 
-static void pause_key(int (*getkey)(void))
-{
-  printw("(press any key to continue)\n");
-  refresh();
-  getkey();
-}
+pokemon_t party[MAX_PARTY];
+int party_count = 0;
+int party_active = 0;
 
 /* Low-HP wilds are easier to catch. */
 static bool try_catch(const pokemon_t *wild)
@@ -22,26 +20,39 @@ static bool try_catch(const pokemon_t *wild)
   return (rand() % 100) < pct;
 }
 
+/* Fixed-layout battle screen: redrawn in place each round (no scrolling). */
+static void draw_battle_screen(pokemon_t *player, pokemon_t *enemy,
+                               const char *enemy_label, bool can_catch)
+{
+  clear();
+  mvprintw(0, 0, "%s %s  (Lv.%d)   HP %d/%d",
+           enemy_label, species_name(enemy->species), enemy->level,
+           enemy->cur_hp, enemy->hp);
+  mvprintw(1, 0, "Your %s  (Lv.%d)   HP %d/%d",
+           species_name(player->species), player->level,
+           player->cur_hp, player->hp);
+
+  mvprintw(3, 0, "  1) %-14s  2) %-14s  p) Potion(%d)",
+           move_name(player->move0), move_name(player->move1), bag.potions);
+  if (can_catch) {
+    printw("  b) Ball(%d)", bag.pokeballs);
+  }
+  printw("  r) run  > ");
+
+  /* The last two events, newest on the bottom line. */
+  mvprintw(5, 0, "%s", msg_recent(1));
+  mvprintw(6, 0, "%s", msg_recent(0));
+  refresh();
+}
+
 /* One battle.  Returns 2 = caught, 1 = won, 0 = lost or fled. */
 static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
                       const char *enemy_label, bool can_catch)
 {
-  /* Print the status panel once per round; stray keys are swallowed below
-   * so they don't re-dump the whole panel and scroll the map away. */
+  msg("A %s %s appears!", enemy_label, species_name(enemy->species));
+
   for (;;) {
-    printw("\n%s %s  (Lv.%d)  HP %d/%d\n",
-           enemy_label, species_name(enemy->species), enemy->level,
-           enemy->cur_hp, enemy->hp);
-    printw("Your %s  (Lv.%d)  HP %d/%d\n",
-           species_name(player->species), player->level,
-           player->cur_hp, player->hp);
-    printw("  1) %-14s 2) %-14s  p) Potion(%d)",
-           move_name(player->move0), move_name(player->move1), bag.potions);
-    if (can_catch) {
-      printw("  b) Ball(%d)", bag.pokeballs);
-    }
-    printw("  r) run\n> ");
-    refresh();
+    draw_battle_screen(player, enemy, enemy_label, can_catch);
 
     int k = getkey();
     while (k != 'r' && k != 'p' && k != '1' && k != '2' &&
@@ -50,45 +61,35 @@ static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
     }
 
     if (k == 'r' || k < 0) {
-      printw("\nYou ran away!\n");
+      msg("You ran away!");
       return 0;
     }
 
     if (k == 'p') {
-      if (bag.potions <= 0) {
-        printw("  (no potions left)\n");
-        continue;
-      }
-      if (player->cur_hp >= player->hp) {
-        printw("  (already at full HP)\n");
-        continue;
-      }
+      if (bag.potions <= 0) { msg("No potions left!"); continue; }
+      if (player->cur_hp >= player->hp) { msg("Already at full HP!"); continue; }
       bag.potions--;
       player->cur_hp += POTION_HEAL;
       if (player->cur_hp > player->hp) player->cur_hp = player->hp;
-      printw("  Used a Potion! %s is at %d/%d HP.\n",
-             species_name(player->species), player->cur_hp, player->hp);
+      msg("Used a Potion! %s is back to %d/%d HP.",
+          species_name(player->species), player->cur_hp, player->hp);
     } else if (can_catch && k == 'b') {
-      if (bag.pokeballs <= 0) {
-        printw("  (no Poke Balls left)\n");
-        continue;
-      }
+      if (bag.pokeballs <= 0) { msg("No Poke Balls left!"); continue; }
       bag.pokeballs--;
       if (try_catch(enemy)) {
-        printw("\nGotcha! You caught %s!\n", species_name(enemy->species));
+        msg("Gotcha! You caught %s!", species_name(enemy->species));
         return 2;
       }
-      printw("  The Poke Ball shook... %s broke free!\n",
-             species_name(enemy->species));
+      msg("The Poke Ball shook... %s broke free!", species_name(enemy->species));
     } else {
       /* A damaging move (k == '1' or '2'). */
       int move_idx = (k == '1') ? player->move0 : player->move1;
       int dmg = battle_damage(player, enemy, move_idx);
       enemy->cur_hp -= dmg;
-      printw("  Your %s used %s, dealt %d damage!\n",
-             species_name(player->species), move_name(move_idx), dmg);
+      msg("Your %s used %s, dealt %d damage!",
+          species_name(player->species), move_name(move_idx), dmg);
       if (enemy->cur_hp <= 0) {
-        printw("  Foe %s fainted! You win!\n", species_name(enemy->species));
+        msg("Foe %s fainted! You win!", species_name(enemy->species));
         return 1;
       }
     }
@@ -97,11 +98,11 @@ static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
     int emove = (rand() & 1) ? enemy->move0 : enemy->move1;
     int edmg = battle_damage(enemy, player, emove);
     player->cur_hp -= edmg;
-    printw("  Foe %s used %s, dealt %d damage!\n",
-           species_name(enemy->species), move_name(emove), edmg);
+    msg("Foe %s used %s, dealt %d damage!",
+        species_name(enemy->species), move_name(emove), edmg);
     if (player->cur_hp <= 0) {
-      printw("  Your %s fainted! You were rushed to the Pokemon Center..\n",
-             species_name(player->species));
+      msg("Your %s fainted! You were rushed to the Pokemon Center.",
+          species_name(player->species));
       player->cur_hp = player->hp;   /* heal up */
       return 0;
     }
@@ -111,6 +112,7 @@ static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
 void starter_pick(pokemon_t *out, int (*getkey)(void))
 {
   for (;;) {
+    clear();
     printw("Choose your starter (Gen 1 & 2):\n");
     for (int i = 0; i < NUM_STARTERS; i++) {
       printw("  %d) %s\n", i + 1, species_name(starter_species[i]));
@@ -123,7 +125,7 @@ void starter_pick(pokemon_t *out, int (*getkey)(void))
               (k < 0) ? 0 : -1;   /* EOF defaults to the first starter */
     if (idx >= 0) {
       *out = make_pokemon(starter_species[idx], 5);
-      printw("\nYou chose %s!\n", species_name(out->species));
+      msg("You chose %s!", species_name(out->species));
       return;
     }
   }
@@ -133,16 +135,19 @@ void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist)
 {
   pokemon_t wild = make_pokemon(rand() % pokemon_num_species,
                                 wild_level(manhattan_dist));
-  printw("\nA wild %s appeared!\n", species_name(wild.species));
 
   int res = run_battle(player, &wild, getkey, "Wild", true);
   if (res == 2) {
-    printw("%s was caught! (no party system yet, so it's a trophy)\n",
-           species_name(wild.species));
+    if (party_count < MAX_PARTY) {
+      party[party_count++] = wild;
+      msg("%s joined your party! (%d/%d)",
+          species_name(wild.species), party_count, MAX_PARTY);
+    } else {
+      msg("Party is full - %s scurried away!", species_name(wild.species));
+    }
   } else if (res == 1) {
-    printw("The wild %s was defeated!\n", species_name(wild.species));
+    msg("The wild %s was defeated!", species_name(wild.species));
   }
-  pause_key(getkey);
 }
 
 void trainer_battle(pokemon_t *player, int (*getkey)(void),
@@ -163,22 +168,50 @@ void trainer_battle(pokemon_t *player, int (*getkey)(void),
   if (lvl > 100) lvl = 100;
 
   pokemon_t enemy = make_pokemon(sp, lvl);
-  printw("\nA trainer with a %s blocks your path!\n", species_name(enemy.species));
 
   if (run_battle(player, &enemy, getkey, "Trainer", false) == 1) {
     npc->defeated = 1;
     npc->mtype = MOVE_WANDERER;   /* defeated trainers wander off */
     int reward = enemy.level * 50;
     bag.money += reward;
-    printw("\nYou won $%d!\n", reward);
+    msg("You defeated the trainer and won $%d!", reward);
   }
-  pause_key(getkey);
+}
+
+void party_view(int (*getkey)(void))
+{
+  for (;;) {
+    clear();
+    printw("========== Your party (%d/%d) ==========\n",
+           party_count, MAX_PARTY);
+    for (int i = 0; i < party_count; i++) {
+      printw("  %s%d) %-16s  Lv.%-3d  HP %d/%d\n",
+             (i == party_active) ? "*" : " ",
+             i + 1, species_name(party[i].species),
+             party[i].level, party[i].cur_hp, party[i].hp);
+    }
+    printw("\n  * = active   pick 1-%d to switch   q to return\n> ", party_count);
+    refresh();
+
+    int k = getkey();
+    if (k == 'q' || k == 'Q' || k == ERR) {
+      return;
+    }
+    if (k >= '1' && k <= '0' + party_count) {
+      int idx = k - '1';
+      if (idx != party_active) {
+        party_active = idx;
+        msg("Now battling with %s.", species_name(party[party_active].species));
+      }
+    }
+  }
 }
 
 void shop_mart(int (*getkey)(void))
 {
   for (;;) {
-    printw("\n========== Pokemon Mart ==========\n");
+    clear();
+    printw("========== Pokemon Mart ==========\n");
     printw("You have $%d\n", bag.money);
     printw("  1) Potion    ($%d)  heal %d HP   you have %d\n",
            POTION_COST, POTION_HEAL, bag.potions);
@@ -192,24 +225,24 @@ void shop_mart(int (*getkey)(void))
       k = getkey();   /* ignore stray keys so the menu isn't re-dumped */
     }
     if (k == 'q' || k == 'Q' || k < 0) {
-      printw("\nCome again!\n");
+      msg("Come again!");
       return;
     }
     if (k == '1') {
       if (bag.money >= POTION_COST) {
         bag.money -= POTION_COST;
         bag.potions++;
-        printw("\nBought a Potion!\n");
+        msg("Bought a Potion!");
       } else {
-        printw("\nNot enough money!\n");
+        msg("Not enough money!");
       }
     } else if (k == '2') {
       if (bag.money >= BALL_COST) {
         bag.money -= BALL_COST;
         bag.pokeballs++;
-        printw("\nBought a Poke Ball!\n");
+        msg("Bought a Poke Ball!");
       } else {
-        printw("\nNot enough money!\n");
+        msg("Not enough money!");
       }
     }
   }

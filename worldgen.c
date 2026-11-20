@@ -12,6 +12,7 @@
 #include "dijkstra.h"
 #include "heap.h"
 #include "battle.h"
+#include "msg.h"
 
 /* ------------------------------------------------------------------------- *
  * ncurses initialization + color pairs.                                     *
@@ -28,7 +29,7 @@ static void init_curses(void)
   noecho();
   keypad(stdscr, TRUE);      /* arrow keys */
   curs_set(0);               /* hide cursor */
-  scrollok(stdscr, TRUE);    /* let the battle log scroll */
+  scrollok(stdscr, TRUE);    /* let dialogs scroll if they must */
   start_color();
   init_pair(CP_WHITE,   COLOR_WHITE,   COLOR_BLACK);
   init_pair(CP_CYAN,    COLOR_CYAN,    COLOR_BLACK);
@@ -93,17 +94,21 @@ void print_map(terrain_map_t *map)
   }
 }
 
-static void draw_frame(terrain_map_t *g, Location_t loc, const char *status)
+/* Classic roguelike layout: map on top, one status line, then a banner of
+ * the last few events (fed by the message log). */
+static void draw_frame(terrain_map_t *g, Location_t loc)
 {
   clear();
   print_map(g);
-  mvprintw(GRID_HEIGHT, 0, "current location: (%d,%d)   [?=help]",
-           loc.x - 200, loc.y - 200);
-  mvprintw(GRID_HEIGHT + 1, 0, "$%d   %d potions   %d balls",
-           bag.money, bag.potions, bag.pokeballs);
-  if (status[0]) {
-    mvprintw(GRID_HEIGHT + 2, 0, "%s", status);
-  }
+  mvprintw(GRID_HEIGHT, 0,
+           "loc (%d,%d)   $%d   %d potions   %d balls   party %d/%d   [h help m log p party]",
+           loc.x - 200, loc.y - 200, bag.money, bag.potions, bag.pokeballs,
+           party_count, MAX_PARTY);
+
+  int banner = 3;
+  if (LINES - (GRID_HEIGHT + 1) < banner) banner = LINES - (GRID_HEIGHT + 1);
+  if (banner < 0) banner = 0;
+  msg_show_banner(GRID_HEIGHT + 1, banner);
   refresh();
 }
 
@@ -197,6 +202,8 @@ static void print_help(void)
   printw("  rest          . or any other key\n");
   printw("  fly           f  (then enter x and y, -200..200)\n");
   printw("  help          h or ?\n");
+  printw("  message log   m\n");
+  printw("  party         p\n");
   printw("  quit          q  (or Ctrl-C)\n\n");
   printw("  time passes by move cost: path=10 grass=20 water=7\n");
   printw("  The world is 401 x 401 maps; the center is (0,0).\n\n");
@@ -250,16 +257,17 @@ int main(int argc, char *argv[])
 
   init_curses();
 
-  pokemon_t pc_pokemon;
-  starter_pick(&pc_pokemon, read_key_blocking);
+  /* The starter is the first (and active) party member. */
+  starter_pick(&party[0], read_key_blocking);
+  party_count = 1;
+  party_active = 0;
 
   heap_t turn;
   heap_init(&turn, cmp_char_turn, NULL);
   rebuild_turn_queue(&turn);
 
-  char status[96];
   bool shouldQuit = false;
-  draw_frame(currGrid, currLoc, "");
+  draw_frame(currGrid, currLoc);
 
   while (!shouldQuit) {
     struct character_s *cur = (struct character_s *) heap_remove_min(&turn);
@@ -275,8 +283,7 @@ int main(int argc, char *argv[])
     }
 
     /* ----- PC's turn: render, then wait for the player. ----- */
-    draw_frame(currGrid, currLoc, status);
-    status[0] = '\0';
+    draw_frame(currGrid, currLoc);
 
     int key = read_key_blocking();
     int dx = 0, dy = 0;
@@ -295,6 +302,14 @@ int main(int argc, char *argv[])
         print_help();
         break;   /* help costs no turn */
 
+      case 'm':
+        msg_hist_view(read_key_blocking);
+        break;   /* viewing the log costs no turn */
+
+      case 'p':
+        party_view(read_key_blocking);
+        break;   /* viewing the party costs no turn */
+
       case 'f': {
         int x = read_int_prompt("fly to x [-200, 200]: ");
         int y = read_int_prompt("fly to y [-200, 200]: ");
@@ -307,8 +322,7 @@ int main(int argc, char *argv[])
           setup_map(currGrid);
           transitioned = true;
         } else {
-          snprintf(status, sizeof status,
-                   "you cant fly that far on your pidgey!");
+          msg("You can't fly that far on your pidgey!");
         }
         break;
       }
@@ -331,14 +345,14 @@ int main(int argc, char *argv[])
     if (move_requested) {
       int res = pc_try_move(currGrid, dx, dy);
       if (res == PC_MOVE_BLOCKED) {
-        snprintf(status, sizeof status, "that way is blocked");
+        msg("That way is blocked.");
         pc.next_turn += REST_COST;
       } else if (res == PC_MOVE_BATTLE) {
         int tx = pc.location.x + dx, ty = pc.location.y + dy;
         struct character_s *foe = currGrid->cmap[tx][ty];
         if (foe) {
           int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
-          trainer_battle(&pc_pokemon, read_key_blocking, foe, md);
+          trainer_battle(&party[party_active], read_key_blocking, foe, md);
         }
         pc.next_turn += REST_COST;
       } else if (res >= PC_MOVE_EXIT_UP) {
@@ -351,15 +365,16 @@ int main(int argc, char *argv[])
         /* Moved within the map: buildings, then tall-grass encounters. */
         char t = currGrid->grid[pc.location.x][pc.location.y];
         if (t == pokemonCenter.ascii) {
-          pc_pokemon.cur_hp = pc_pokemon.hp;
-          snprintf(status, sizeof status, "Nurse Joy healed your %s!",
-                   species_name(pc_pokemon.species));
+          for (i = 0; i < party_count; i++) {
+            party[i].cur_hp = party[i].hp;   /* the center heals the whole party */
+          }
+          msg("Nurse Joy healed your party!");
         } else if (t == pokeMart.ascii) {
           shop_mart(read_key_blocking);
         } else if (t == tallGrassTile.ascii &&
                    (rand() % 100) < ENCOUNTER_PROB) {
           int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
-          wild_encounter(&pc_pokemon, read_key_blocking, md);
+          wild_encounter(&party[party_active], read_key_blocking, md);
         }
       }
     }
