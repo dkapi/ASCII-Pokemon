@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "tiles.h"
 
 struct tile_s treeTile = {
@@ -58,3 +60,20 @@ const struct tile_s *tiles[TileCount] = {
   [Path]         = &pathTile,
   [Water]        = &waterTile,
 };
+
+struct tile_s *char_to_tile_s(char terrain)
+{
+  switch (terrain) {
+    case ':': return &tallGrassTile;
+    case '^': return &treeTile;
+    case '~': return &waterTile;
+    case '%': return &mountainTile;
+    case '.': return &clearingTile;
+    case 'C': return &pokemonCenter;
+    case 'M': return &pokeMart;
+    case '#': return &pathTile;
+    default:
+      fprintf(stderr, "unknown terrain '%c' in char_to_tile_s\n", terrain);
+      return &pathTile;
+  }
+}

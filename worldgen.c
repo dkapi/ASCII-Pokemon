@@ -37,15 +37,14 @@ static void restore_terminal(void)
  * collide with printable ASCII. */
 enum { K_UP = 0x100, K_DOWN, K_LEFT, K_RIGHT };
 
-/* Returns the key value, or 0 when no key was pressed within the timeout. */
+/* Returns the key value, or 0 when no key was pressed within the timeout,
+ * or -1 on end-of-input. */
 static int read_key(void)
 {
   unsigned char b, b2, b3;
   ssize_t n = read(STDIN_FILENO, &b, 1);
 
   if (n != 1) {
-    /* 0 bytes on a tty just means "no key yet" (timeout); on a pipe or
-     * file it means end-of-input, which we report as -1. */
     if (n == 0) {
       return isatty(STDIN_FILENO) ? 0 : -1;
     }
@@ -83,12 +82,13 @@ void print_map(terrain_map_t *map)
   for (i = 0; i < GRID_HEIGHT; i++) {
     for (j = 0; j < GRID_WIDTH; j++) {
       const char *color = "";
-      char c = map->grid[i][j];
+      char c;
 
-      if (i == pc.location.x && j == pc.location.y) {
-        c = pc.ascii;
-        color = WHITE;
+      if (map->cmap[i][j]) {
+        c = map->cmap[i][j]->ascii;
+        color = (c == '@') ? WHITE : CYAN;
       } else {
+        c = map->grid[i][j];
         switch (c) {
           case '%': color = MAGENTA; break;
           case '.': color = YELLOW;  break;
@@ -108,6 +108,15 @@ void print_map(terrain_map_t *map)
     putchar('\n');
   }
   printf("%s", RESET);
+}
+
+/* Reset every map entry to a fresh PC + NPC population. */
+static void setup_map(terrain_map_t *g)
+{
+  clear_characters(g);
+  place_pc(g);
+  place_all_npcs(g);
+  compute_dist_maps(g, &pc.location);
 }
 
 /* ------------------------------------------------------------------------- *
@@ -189,13 +198,16 @@ static void print_help(void)
   printf("%s", CLEARSCREEN);
   printf("========== ASCII-Pokemon : controls ==========\n\n");
   printf("  move          arrow keys, or n / s / e / w\n");
+  printf("  rest          any other key (NPCs still act)\n");
   printf("  fly           f  (then enter x and y, -200..200)\n");
   printf("  help          h or ?\n");
   printf("  quit          q  (or Ctrl-C)\n\n");
-  printf("  The world is 401 x 401 maps; the center is (0,0).\n");
-  printf("  '@' is you.  '%%' mountain, '^' tree, ':' tall grass,\n");
-  printf("  '~' water, '#' path, 'M' mart, 'C' pokemon center.\n\n");
-  printf("press any key to return to the game...\n");
+  printf("  The world is 401 x 401 maps; the center is (0,0).\n\n");
+  printf("  @ you  %% mountain  ^ tree  : grass  ~ water  # path\n");
+  printf("  M mart  C center\n");
+  printf("  NPCs: h hiker  r rival  p pacer  w wanderer\n");
+  printf("        s sentry  e explorer  m swimmer\n\n");
+  printf("press any key to return...\n");
   fflush(stdout);
   wait_any_key();
 }
@@ -216,8 +228,6 @@ int main(int argc, char *argv[])
 
   srand(time(NULL));
 
-  /* Allocated on the heap instead of the ~1.2 MB stack frame it used to
-   * need.  worldMap[x][y] still works unchanged. */
   terrain_map_t *(*worldMap)[WORLD_WIDTH] =
     calloc(WORLD_HEIGHT, sizeof *worldMap);
   assert(worldMap);
@@ -232,31 +242,13 @@ int main(int argc, char *argv[])
   worldMap[currLoc.x][currLoc.y] = currGrid;
   gates = currGrid->gates;
 
-  place_character(currGrid);
+  setup_map(currGrid);
 
-  /* Optional debug dump of the hiker/rival Dijkstra cost maps. */
   if (debug) {
     printf("\n hiker cost map\n");
-    static dijk_map_t hikerCostMap[GRID_HEIGHT][GRID_WIDTH];
-    struct character_s hiker = {
-      .ascii = 'H',
-      .location = { 0, 0 },
-      .tile = &mountainTile,
-      .cost = hiker_cost,
-    };
-    dijkstra_map(currGrid, &pc.location, hikerCostMap, &hiker);
-    print_dijkstra_map(hikerCostMap);
-
+    print_dist_map(hiker_dist);
     printf("\nrival cost map\n");
-    static dijk_map_t rivalCostMap[GRID_HEIGHT][GRID_WIDTH];
-    struct character_s rival = {
-      .ascii = 'R',
-      .location = { 0, 0 },
-      .tile = &clearingTile,
-      .cost = rival_cost,
-    };
-    dijkstra_map(currGrid, &pc.location, rivalCostMap, &rival);
-    print_dijkstra_map(rivalCostMap);
+    print_dist_map(rival_dist);
   }
 
   printf("%s", CLEARSCREEN);
@@ -362,10 +354,13 @@ int main(int argc, char *argv[])
         worldMap[newLoc.x][newLoc.y] = newGrid;
       }
       currGrid = worldMap[newLoc.x][newLoc.y];
-      place_character(currGrid);
+      setup_map(currGrid);
       currLoc = newLoc;
       gates = currGrid->gates;
     }
+
+    /* NPCs act every turn, whether the PC moved or rested. */
+    move_npcs(currGrid);
 
     printf("%s", CLEARSCREEN);
     print_map(currGrid);

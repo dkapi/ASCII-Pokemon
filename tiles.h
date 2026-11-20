@@ -33,4 +33,7 @@ extern struct tile_s pokeMart;
 /* Every map tile, indexed directly by tile_e (0 .. TileCount-1). */
 extern const struct tile_s *tiles[TileCount];
 
+/* Map a terrain glyph to its tile definition. */
+struct tile_s *char_to_tile_s(char terrain);
+
 #endif /* _TILES_H */

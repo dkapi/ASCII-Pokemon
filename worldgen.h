@@ -36,8 +36,11 @@ typedef struct Gates {
   Location_t top;
 } Gates_t;
 
+struct character_s;
+
 typedef struct terrain_map {
   char grid[GRID_HEIGHT][GRID_WIDTH];
+  struct character_s *cmap[GRID_HEIGHT][GRID_WIDTH];
   Location_t location;
   Gates_t gates;
   int visited, cost, distance;

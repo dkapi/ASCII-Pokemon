@@ -3,6 +3,7 @@
 #include "heap.h"
 #include "dijkstra.h"
 #include "characters.h"
+#include "tiles.h"
 
 static int32_t character_cost_cmp(const void *key, const void *with)
 {
@@ -12,23 +13,6 @@ static int32_t character_cost_cmp(const void *key, const void *with)
   if (k->cost < w->cost) return -1;
   if (k->cost > w->cost) return 1;
   return 0;
-}
-
-struct tile_s *char_to_tile_s(char terrain)
-{
-  switch (terrain) {
-    case ':': return &tallGrassTile;
-    case '^': return &treeTile;
-    case '~': return &waterTile;
-    case '%': return &mountainTile;
-    case '.': return &clearingTile;
-    case 'C': return &pokemonCenter;
-    case 'M': return &pokeMart;
-    case '#': return &pathTile;
-    default:
-      fprintf(stderr, "unknown terrain '%c' in char_to_tile_s\n", terrain);
-      return &pathTile;
-  }
 }
 
 void dijkstra_map(terrain_map_t *map, Location_t *start,
@@ -92,16 +76,33 @@ void dijkstra_map(terrain_map_t *map, Location_t *start,
   heap_delete(&h);
 }
 
-void print_dijkstra_map(dijk_map_t dNode[GRID_HEIGHT][GRID_WIDTH])
+void compute_dist_maps(terrain_map_t *map, Location_t *start)
+{
+  static dijk_map_t hmap[GRID_HEIGHT][GRID_WIDTH];
+  static dijk_map_t rmap[GRID_HEIGHT][GRID_WIDTH];
+  int i, j;
+
+  dijkstra_map(map, start, hmap, &hiker);
+  dijkstra_map(map, start, rmap, &rival);
+
+  for (i = 0; i < GRID_HEIGHT; i++) {
+    for (j = 0; j < GRID_WIDTH; j++) {
+      hiker_dist[i][j] = (int32_t) hmap[i][j].cost;
+      rival_dist[i][j] = (int32_t) rmap[i][j].cost;
+    }
+  }
+}
+
+void print_dist_map(int32_t dist[GRID_HEIGHT][GRID_WIDTH])
 {
   int i, j;
 
   for (i = 0; i < GRID_HEIGHT; i++) {
     for (j = 0; j < GRID_WIDTH; j++) {
-      if (dNode[i][j].cost == INT32_MAX) {
+      if (dist[i][j] == INT32_MAX) {
         printf("   ");
       } else {
-        printf("%02d ", dNode[i][j].cost % 100);
+        printf("%02d ", dist[i][j] % 100);
       }
     }
     printf("\n");
