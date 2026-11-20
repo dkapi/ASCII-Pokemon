@@ -61,6 +61,7 @@ uint32_t hiker_cost(struct tile_s tile);
 uint32_t rival_cost(struct tile_s tile);
 uint32_t swimmer_cost(struct tile_s tile);
 uint32_t other_cost(struct tile_s tile);
+const char *char_title(const struct character_s *c);
 
 /* pc_try_move() return codes. */
 enum {

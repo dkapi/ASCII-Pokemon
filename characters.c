@@ -131,6 +131,22 @@ uint32_t swimmer_cost(struct tile_s tile)
   }
 }
 
+/* The trainer's display title (their character class), used in battle intros
+ * and headers instead of identifying them by their pokemon. */
+const char *char_title(const struct character_s *c)
+{
+  switch (c->mtype) {
+    case MOVE_HIKER:    return "Hiker";
+    case MOVE_RIVAL:    return "Rival";
+    case MOVE_SWIMMER:  return "Swimmer";
+    case MOVE_PACER:    return "Pacer";
+    case MOVE_SENTRY:   return "Sentry";
+    case MOVE_WANDERER: return "Wanderer";
+    case MOVE_EXPLORER: return "Explorer";
+    default:            return "Trainer";
+  }
+}
+
 /* ------------------------------------------------------------------------- *
  * Placement.                                                                *
  * ------------------------------------------------------------------------- */
@@ -349,7 +365,12 @@ int pc_try_move(terrain_map_t *map, int dx, int dy)
     return PC_MOVE_BLOCKED;
   }
   if (map->cmap[nx][ny]) {
-    return PC_MOVE_BATTLE;   /* bumped an NPC */
+    if (map->cmap[nx][ny]->defeated) {
+      /* A beaten trainer no longer fights or blocks the way; step through. */
+      map->cmap[nx][ny] = NULL;
+    } else {
+      return PC_MOVE_BATTLE;   /* bumped a live NPC */
+    }
   }
   t = char_to_tile_s(map->grid[nx][ny]);
   if (pc.cost(*t) == INT32_MAX) {

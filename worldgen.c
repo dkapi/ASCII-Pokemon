@@ -395,6 +395,10 @@ int main(int argc, char *argv[])
       continue;
     }
 
+    /* Track the PC's live position so the hiker and rival actually chase
+     * you, not the spot where you first spawned. */
+    compute_dist_maps(currGrid, &pc.location);
+
     heap_insert(&turn, &pc);
   }
 

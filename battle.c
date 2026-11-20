@@ -49,8 +49,6 @@ static void draw_battle_screen(pokemon_t *player, pokemon_t *enemy,
 static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
                       const char *enemy_label, bool can_catch)
 {
-  msg("A %s %s appears!", enemy_label, species_name(enemy->species));
-
   for (;;) {
     draw_battle_screen(player, enemy, enemy_label, can_catch);
 
@@ -135,6 +133,7 @@ void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist)
 {
   pokemon_t wild = make_pokemon(rand() % pokemon_num_species,
                                 wild_level(manhattan_dist));
+  msg("A wild %s appeared!", species_name(wild.species));
 
   int res = run_battle(player, &wild, getkey, "Wild", true);
   if (res == 2) {
@@ -162,19 +161,23 @@ void trainer_battle(pokemon_t *player, int (*getkey)(void),
     default:           sp = rand() % pokemon_num_species; break;
   }
 
+  /* Identify the trainer by their class, not their pokemon. */
+  const char *title = char_title(npc);
+
   /* Trainers scale with distance from the world center, a touch tougher
    * than the wild pokemon at the same distance. */
   int lvl = wild_level(manhattan_dist) + 2;
   if (lvl > 100) lvl = 100;
 
   pokemon_t enemy = make_pokemon(sp, lvl);
+  msg("A %s blocks your path!", title);
 
-  if (run_battle(player, &enemy, getkey, "Trainer", false) == 1) {
+  if (run_battle(player, &enemy, getkey, title, false) == 1) {
     npc->defeated = 1;
-    npc->mtype = MOVE_WANDERER;   /* defeated trainers wander off */
+    npc->mtype = MOVE_SENTRY;   /* beaten trainers stand still */
     int reward = enemy.level * 50;
     bag.money += reward;
-    msg("You defeated the trainer and won $%d!", reward);
+    msg("You defeated the %s and won $%d!", title, reward);
   }
 }
 
