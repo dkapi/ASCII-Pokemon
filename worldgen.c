@@ -125,6 +125,8 @@ static void draw_frame(terrain_map_t *g, Location_t loc, const char *status)
   print_map(g);
   printf("%scurrent location: (%d,%d)   [?=help]%s\n",
          WHITE, loc.x - 200, loc.y - 200, RESET);
+  printf("%s$%d   %d potions   %d balls%s\n",
+         WHITE, bag.money, bag.potions, bag.pokeballs, RESET);
   if (status[0]) {
     printf("%s%s%s\n", YELLOW, status, RESET);
   }
@@ -392,8 +394,7 @@ int main(int argc, char *argv[])
           snprintf(status, sizeof status, "Nurse Joy healed your %s!",
                    species_name(pc_pokemon.species));
         } else if (t == pokeMart.ascii) {
-          snprintf(status, sizeof status,
-                   "Welcome to the Pokemart! (nothing for sale yet)");
+          shop_mart(read_key_blocking);
         } else if (t == tallGrassTile.ascii &&
                    (rand() % 100) < ENCOUNTER_PROB) {
           int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
