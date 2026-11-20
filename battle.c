@@ -26,6 +26,8 @@ static bool try_catch(const pokemon_t *wild)
 static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
                       const char *enemy_label, bool can_catch)
 {
+  /* Print the status panel once per round; stray keys are swallowed below
+   * so they don't re-dump the whole panel and scroll the map away. */
   for (;;) {
     printf("\n%s %s  (Lv.%d)  HP %d/%d\n",
            enemy_label, species_name(enemy->species), enemy->level,
@@ -33,17 +35,19 @@ static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
     printf("Your %s  (Lv.%d)  HP %d/%d\n",
            species_name(player->species), player->level,
            player->cur_hp, player->hp);
-    printf("  1) %-14s 2) %-14s\n",
-           move_name(player->move0), move_name(player->move1));
-    printf("  p) Potion(%d)", bag.potions);
+    printf("  1) %-14s 2) %-14s  p) Potion(%d)",
+           move_name(player->move0), move_name(player->move1), bag.potions);
     if (can_catch) {
-      printf("   b) Ball(%d)", bag.pokeballs);
+      printf("  b) Ball(%d)", bag.pokeballs);
     }
-    printf("   r) run  > ");
+    printf("  r) run\n> ");
     fflush(stdout);
 
     int k = getkey();
-    int move_idx = -1;
+    while (k != 'r' && k != 'p' && k != '1' && k != '2' &&
+           k >= 0 && !(can_catch && k == 'b')) {
+      k = getkey();   /* ignore unrecognized keys */
+    }
 
     if (k == 'r' || k < 0) {
       printf("\nYou ran away!\n");
@@ -52,21 +56,21 @@ static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
 
     if (k == 'p') {
       if (bag.potions <= 0) {
-        printf("\nNo potions left!\n");
+        printf("  (no potions left)\n");
         continue;
       }
       if (player->cur_hp >= player->hp) {
-        printf("\nAlready at full HP!\n");
+        printf("  (already at full HP)\n");
         continue;
       }
       bag.potions--;
       player->cur_hp += POTION_HEAL;
       if (player->cur_hp > player->hp) player->cur_hp = player->hp;
-      printf("\nUsed a Potion! %s is at %d/%d HP.\n",
+      printf("  Used a Potion! %s is at %d/%d HP.\n",
              species_name(player->species), player->cur_hp, player->hp);
     } else if (can_catch && k == 'b') {
       if (bag.pokeballs <= 0) {
-        printf("\nNo Poke Balls left!\n");
+        printf("  (no Poke Balls left)\n");
         continue;
       }
       bag.pokeballs--;
@@ -74,18 +78,11 @@ static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
         printf("\nGotcha! You caught %s!\n", species_name(enemy->species));
         return 2;
       }
-      printf("\nThe Poke Ball shook... %s broke free!\n",
+      printf("  The Poke Ball shook... %s broke free!\n",
              species_name(enemy->species));
-    } else if (k == '1') {
-      move_idx = player->move0;
-    } else if (k == '2') {
-      move_idx = player->move1;
     } else {
-      continue;
-    }
-
-    /* Player's damaging action. */
-    if (move_idx >= 0) {
+      /* A damaging move (k == '1' or '2'). */
+      int move_idx = (k == '1') ? player->move0 : player->move1;
       int dmg = battle_damage(player, enemy, move_idx);
       enemy->cur_hp -= dmg;
       printf("  Your %s used %s, dealt %d damage!\n",
@@ -191,6 +188,9 @@ void shop_mart(int (*getkey)(void))
     fflush(stdout);
 
     int k = getkey();
+    while (k != 'q' && k != 'Q' && k != '1' && k != '2' && k >= 0) {
+      k = getkey();   /* ignore stray keys so the menu isn't re-dumped */
+    }
     if (k == 'q' || k == 'Q' || k < 0) {
       printf("\nCome again!\n");
       return;
