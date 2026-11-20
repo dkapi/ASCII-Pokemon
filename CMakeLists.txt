@@ -13,6 +13,8 @@ add_executable(worldgen
   dijkstra.c
   characters.c
   tiles.c
+  pokemon.c
+  battle.c
 )
 
 target_compile_options(worldgen PRIVATE -Wall -Wextra)

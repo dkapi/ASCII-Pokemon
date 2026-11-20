@@ -12,6 +12,7 @@
 #include "characters.h"
 #include "dijkstra.h"
 #include "heap.h"
+#include "battle.h"
 
 /* ------------------------------------------------------------------------- *
  * Terminal: raw mode so keys register instantly (no Enter required).        *
@@ -242,7 +243,9 @@ static void print_help(void)
   printf("  @ you  %% mountain  ^ tree  : grass  ~ water  # path\n");
   printf("  M mart  C center\n");
   printf("  NPCs: h hiker  r rival  p pacer  w wanderer\n");
-  printf("        s sentry  e explorer  m swimmer\n\n");
+  printf("        s sentry  e explorer  m swimmer\n");
+  printf("  walk in tall grass ':' to find wild pokemon\n");
+  printf("  walk into a trainer to battle\n\n");
   printf("press any key to return...\n");
   fflush(stdout);
   wait_any_key();
@@ -282,6 +285,9 @@ int main(int argc, char *argv[])
   }
 
   enable_raw_mode();
+
+  pokemon_t pc_pokemon;
+  starter_pick(&pc_pokemon, read_key_blocking);
 
   heap_t turn;
   heap_init(&turn, cmp_char_turn, NULL);
@@ -363,14 +369,28 @@ int main(int argc, char *argv[])
       if (res == PC_MOVE_BLOCKED) {
         snprintf(status, sizeof status, "that way is blocked");
         pc.next_turn += REST_COST;
+      } else if (res == PC_MOVE_BATTLE) {
+        int tx = pc.location.x + dx, ty = pc.location.y + dy;
+        struct character_s *foe = currGrid->cmap[tx][ty];
+        if (foe) {
+          trainer_battle(&pc_pokemon, read_key_blocking, foe);
+        }
+        pc.next_turn += REST_COST;
       } else if (res >= PC_MOVE_EXIT_UP) {
         currLoc = leave_map(res, currLoc, &gates);
         currGrid = load_map(worldMap, currLoc, gates);
         gates = currGrid->gates;
         setup_map(currGrid);
         transitioned = true;
+      } else {
+        /* Moved within the map; roll for a wild encounter on tall grass. */
+        if (currGrid->grid[pc.location.x][pc.location.y] ==
+                tallGrassTile.ascii &&
+            (rand() % 100) < ENCOUNTER_PROB) {
+          int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
+          wild_encounter(&pc_pokemon, read_key_blocking, md);
+        }
       }
-      /* else: moved within the map; pc_try_move already added the cost */
     }
 
     if (transitioned) {

@@ -342,7 +342,7 @@ int pc_try_move(terrain_map_t *map, int dx, int dy)
     return PC_MOVE_BLOCKED;
   }
   if (map->cmap[nx][ny]) {
-    return PC_MOVE_BLOCKED;   /* NPC in the way (battles come in step 3) */
+    return PC_MOVE_BATTLE;   /* bumped an NPC */
   }
   t = char_to_tile_s(map->grid[nx][ny]);
   if (pc.cost(*t) == INT32_MAX) {

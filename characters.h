@@ -65,6 +65,7 @@ uint32_t other_cost(struct tile_s tile);
 /* pc_try_move() return codes. */
 enum {
   PC_MOVE_BLOCKED = 0,
+  PC_MOVE_BATTLE,      /* bumped an NPC */
   PC_MOVE_OK,
   PC_MOVE_EXIT_UP,     /* stepped onto the top gate */
   PC_MOVE_EXIT_DOWN,
