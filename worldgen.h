@@ -11,19 +11,6 @@
 #define WORLD_SIZE 401
 #define SEED_NUM 18
 
-#define BLACK   "\e[0;30m"
-#define RED     "\e[0;31m"
-#define GREEN   "\e[0;32m"
-#define YELLOW  "\e[38;5;137m"
-#define BLUE    "\e[0;34m"
-#define MAGENTA "\e[0;35m"
-#define CYAN    "\e[0;36m"
-#define WHITE   "\e[0;37m"
-#define BROWN   "\e[38;5;94m"
-#define LBLUE   "\e[38;5;33m"
-#define RESET   "\e[0m"
-#define CLEARSCREEN "\033[2J\033[H"
-
 typedef struct Location {
   int x;
   int y;

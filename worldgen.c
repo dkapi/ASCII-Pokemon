@@ -4,8 +4,7 @@
 #include <time.h>
 #include <stdbool.h>
 #include <assert.h>
-#include <termios.h>
-#include <unistd.h>
+#include <ncurses.h>
 
 #include "worldgen.h"
 #include "voronoi.h"
@@ -15,122 +14,97 @@
 #include "battle.h"
 
 /* ------------------------------------------------------------------------- *
- * Terminal: raw mode so keys register instantly (no Enter required).        *
+ * ncurses initialization + color pairs.                                     *
  * ------------------------------------------------------------------------- */
-static struct termios saved_termios;
+enum {
+  CP_WHITE = 1, CP_CYAN, CP_MAGENTA, CP_YELLOW,
+  CP_BLUE, CP_GREEN, CP_BROWN, CP_RED, CP_LBLUE,
+};
 
-static void enable_raw_mode(void)
+static void init_curses(void)
 {
-  struct termios raw;
-  tcgetattr(STDIN_FILENO, &saved_termios);
-  raw = saved_termios;
-  raw.c_lflag &= ~(ICANON | ECHO);
-  raw.c_cc[VMIN] = 0;
-  raw.c_cc[VTIME] = 1;   /* 0.1 s read timeout */
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-}
-
-static void restore_terminal(void)
-{
-  tcsetattr(STDIN_FILENO, TCSAFLUSH, &saved_termios);
-}
-
-enum { K_UP = 0x100, K_DOWN, K_LEFT, K_RIGHT };
-
-/* Returns the key value, or 0 when no key was pressed within the timeout,
- * or -1 on end-of-input. */
-static int read_key(void)
-{
-  unsigned char b, b2, b3;
-  ssize_t n = read(STDIN_FILENO, &b, 1);
-
-  if (n != 1) {
-    if (n == 0) {
-      return isatty(STDIN_FILENO) ? 0 : -1;
-    }
-    return 0;
-  }
-  if (b != '\033') {
-    return b;
-  }
-  if (read(STDIN_FILENO, &b2, 1) != 1) return '\033';
-  if (b2 != '[') return '\033';
-  if (read(STDIN_FILENO, &b3, 1) != 1) return '\033';
-  switch (b3) {
-    case 'A': return K_UP;
-    case 'B': return K_DOWN;
-    case 'C': return K_RIGHT;
-    case 'D': return K_LEFT;
-    default:  return '\033';
-  }
+  initscr();
+  cbreak();                  /* no line buffering, but Ctrl-C still works */
+  noecho();
+  keypad(stdscr, TRUE);      /* arrow keys */
+  curs_set(0);               /* hide cursor */
+  scrollok(stdscr, TRUE);    /* let the battle log scroll */
+  start_color();
+  init_pair(CP_WHITE,   COLOR_WHITE,   COLOR_BLACK);
+  init_pair(CP_CYAN,    COLOR_CYAN,    COLOR_BLACK);
+  init_pair(CP_MAGENTA, COLOR_MAGENTA, COLOR_BLACK);
+  init_pair(CP_YELLOW,  COLOR_YELLOW,  COLOR_BLACK);
+  init_pair(CP_BLUE,    COLOR_BLUE,    COLOR_BLACK);
+  init_pair(CP_GREEN,   COLOR_GREEN,   COLOR_BLACK);
+  init_pair(CP_BROWN,   COLOR_YELLOW,  COLOR_BLACK);
+  init_pair(CP_RED,     COLOR_RED,     COLOR_BLACK);
+  init_pair(CP_LBLUE,   COLOR_CYAN,    COLOR_BLACK);
 }
 
 static int read_key_blocking(void)
 {
-  int k;
-  while ((k = read_key()) == 0) {
-    /* wait for the player */
-  }
-  return k;
+  return getch();
 }
 
 static void wait_any_key(void)
 {
-  while (read_key() == 0) {
-    /* spin until a key arrives */
-  }
+  getch();
 }
 
 /* ------------------------------------------------------------------------- *
- * Rendering + map entry.                                                    *
+ * Rendering.                                                                *
  * ------------------------------------------------------------------------- */
+static int tile_pair(char c)
+{
+  switch (c) {
+    case '%': return CP_MAGENTA;
+    case '.': return CP_YELLOW;
+    case '~': return CP_BLUE;
+    case '^': return CP_GREEN;
+    case ':': return CP_GREEN;
+    case '#': return CP_BROWN;
+    case 'C': return CP_RED;
+    case 'M': return CP_LBLUE;
+    default:  return CP_WHITE;
+  }
+}
+
 void print_map(terrain_map_t *map)
 {
   int i, j;
 
   for (i = 0; i < GRID_HEIGHT; i++) {
     for (j = 0; j < GRID_WIDTH; j++) {
-      const char *color = "";
       char c;
+      int pair;
 
       if (map->cmap[i][j]) {
         c = map->cmap[i][j]->ascii;
-        color = (c == '@') ? WHITE : CYAN;
+        pair = (c == '@') ? CP_WHITE : CP_CYAN;
       } else {
         c = map->grid[i][j];
-        switch (c) {
-          case '%': color = MAGENTA; break;
-          case '.': color = YELLOW;  break;
-          case '~': color = BLUE;    break;
-          case '^': color = GREEN;   break;
-          case ':': color = GREEN;   break;
-          case '#': color = BROWN;   break;
-          case 'C': color = RED;     break;
-          case 'M': color = LBLUE;   break;
-          default:
-            fprintf(stderr, "unhandled color case\n");
-            break;
-        }
+        pair = tile_pair(c);
       }
-      printf("%s%c", color, c);
+
+      attron(COLOR_PAIR(pair));
+      mvaddch(i, j, c);
+      attroff(COLOR_PAIR(pair));
     }
-    putchar('\n');
   }
-  printf("%s", RESET);
 }
 
 static void draw_frame(terrain_map_t *g, Location_t loc, const char *status)
 {
-  printf("%s", CLEARSCREEN);
+  clear();
   print_map(g);
-  printf("%scurrent location: (%d,%d)   [?=help]%s\n",
-         WHITE, loc.x - 200, loc.y - 200, RESET);
-  printf("%s$%d   %d potions   %d balls%s\n",
-         WHITE, bag.money, bag.potions, bag.pokeballs, RESET);
+  mvprintw(GRID_HEIGHT, 0, "current location: (%d,%d)   [?=help]",
+           loc.x - 200, loc.y - 200);
+  mvprintw(GRID_HEIGHT + 1, 0, "$%d   %d potions   %d balls",
+           bag.money, bag.potions, bag.pokeballs);
   if (status[0]) {
-    printf("%s%s%s\n", YELLOW, status, RESET);
+    mvprintw(GRID_HEIGHT + 2, 0, "%s", status);
   }
-  fflush(stdout);
+  refresh();
 }
 
 /* Reset the current map to a fresh PC + NPC population and rebuild the
@@ -201,56 +175,40 @@ static Location_t leave_map(int exit, Location_t loc, Gates_t *gates)
 /* ------------------------------------------------------------------------- *
  * Input.                                                                    *
  * ------------------------------------------------------------------------- */
-static int read_int_prompt(const char *prompt)
+static int read_int_prompt(const char *label)
 {
-  char buf[16];
-  int i = 0;
-  unsigned char c;
-
-  printf("%s", prompt);
-  fflush(stdout);
-
-  for (;;) {
-    ssize_t n = read(STDIN_FILENO, &c, 1);
-    if (n < 1) continue;
-    if (c == '\n' || c == '\r') break;
-    if ((c == 127 || c == 8) && i > 0) {
-      i--;
-      printf("\b \b");
-      fflush(stdout);
-      continue;
-    }
-    if (i < (int) sizeof(buf) - 1) {
-      buf[i++] = (char) c;
-      putchar(c);
-      fflush(stdout);
-    }
-  }
-  buf[i] = '\0';
-  putchar('\n');
-  return atoi(buf);
+  int v = 0;
+  echo();
+  curs_set(1);
+  mvprintw(LINES - 1, 0, "%s", label);
+  clrtoeol();
+  refresh();
+  mvscanw(LINES - 1, (int) strlen(label), "%d", &v);
+  noecho();
+  curs_set(0);
+  return v;
 }
 
 static void print_help(void)
 {
-  printf("%s", CLEARSCREEN);
-  printf("========== ASCII-Pokemon : controls ==========\n\n");
-  printf("  move          arrow keys, or n / s / e / w (one tile)\n");
-  printf("  rest          . or any other key\n");
-  printf("  fly           f  (then enter x and y, -200..200)\n");
-  printf("  help          h or ?\n");
-  printf("  quit          q  (or Ctrl-C)\n\n");
-  printf("  time passes by move cost: path=10 grass=20 water=7\n");
-  printf("  The world is 401 x 401 maps; the center is (0,0).\n\n");
-  printf("  @ you  %% mountain  ^ tree  : grass  ~ water  # path\n");
-  printf("  M mart  C center\n");
-  printf("  NPCs: h hiker  r rival  p pacer  w wanderer\n");
-  printf("        s sentry  e explorer  m swimmer\n");
-  printf("  walk in tall grass ':' to find wild pokemon\n");
-  printf("  walk into a trainer to battle\n");
-  printf("  step on 'C' to heal, 'M' to visit the mart\n\n");
-  printf("press any key to return...\n");
-  fflush(stdout);
+  clear();
+  printw("========== ASCII-Pokemon : controls ==========\n\n");
+  printw("  move          arrow keys, or n / s / e / w (one tile)\n");
+  printw("  rest          . or any other key\n");
+  printw("  fly           f  (then enter x and y, -200..200)\n");
+  printw("  help          h or ?\n");
+  printw("  quit          q  (or Ctrl-C)\n\n");
+  printw("  time passes by move cost: path=10 grass=20 water=7\n");
+  printw("  The world is 401 x 401 maps; the center is (0,0).\n\n");
+  printw("  @ you  %% mountain  ^ tree  : grass  ~ water  # path\n");
+  printw("  M mart  C center\n");
+  printw("  NPCs: h hiker  r rival  p pacer  w wanderer\n");
+  printw("        s sentry  e explorer  m swimmer\n");
+  printw("  walk in tall grass ':' to find wild pokemon\n");
+  printw("  walk into a trainer to battle\n");
+  printw("  step on 'C' to heal, 'M' to visit the mart\n\n");
+  printw("press any key to return...\n");
+  refresh();
   wait_any_key();
 }
 
@@ -280,14 +238,17 @@ int main(int argc, char *argv[])
   gates = currGrid->gates;
   setup_map(currGrid);
 
+  /* Debug dump happens before ncurses takes over the terminal. */
   if (debug) {
-    printf("\n hiker cost map\n");
+    printf(" hiker cost map\n");
     print_dist_map(hiker_dist);
     printf("\nrival cost map\n");
     print_dist_map(rival_dist);
+    printf("\npress enter to start...\n");
+    getchar();
   }
 
-  enable_raw_mode();
+  init_curses();
 
   pokemon_t pc_pokemon;
   starter_pick(&pc_pokemon, read_key_blocking);
@@ -323,7 +284,7 @@ int main(int argc, char *argv[])
     bool transitioned = false;
 
     switch (key) {
-      case -1:
+      case ERR:
       case 'q':
       case 'Q':
         shouldQuit = true;
@@ -352,10 +313,10 @@ int main(int argc, char *argv[])
         break;
       }
 
-      case 'n': case K_UP:    dx = -1; dy = 0;  move_requested = true; break;
-      case 's': case K_DOWN:  dx =  1; dy = 0;  move_requested = true; break;
-      case 'e': case K_RIGHT: dx =  0; dy = 1;  move_requested = true; break;
-      case 'w': case K_LEFT:  dx =  0; dy = -1; move_requested = true; break;
+      case 'n': case KEY_UP:    dx = -1; dy = 0;  move_requested = true; break;
+      case 's': case KEY_DOWN:  dx =  1; dy = 0;  move_requested = true; break;
+      case 'e': case KEY_RIGHT: dx =  0; dy = 1;  move_requested = true; break;
+      case 'w': case KEY_LEFT:  dx =  0; dy = -1; move_requested = true; break;
 
       default:
         /* rest: no move, but the turn is consumed */
@@ -411,8 +372,7 @@ int main(int argc, char *argv[])
     heap_insert(&turn, &pc);
   }
 
-  restore_terminal();
-  printf("%s", CLEARSCREEN);
+  endwin();
   printf("But how are you going to be the very best if you quit..\n");
 
   heap_delete(&turn);   /* free the remaining turn-queue nodes */

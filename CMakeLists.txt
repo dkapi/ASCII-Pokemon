@@ -19,3 +19,7 @@ add_executable(worldgen
 )
 
 target_compile_options(worldgen PRIVATE -Wall -Wextra)
+
+find_package(Curses REQUIRED)
+include_directories(${CURSES_INCLUDE_DIRS})
+target_link_libraries(worldgen PRIVATE ${CURSES_LIBRARIES})
