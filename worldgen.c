@@ -245,7 +245,8 @@ static void print_help(void)
   printf("  NPCs: h hiker  r rival  p pacer  w wanderer\n");
   printf("        s sentry  e explorer  m swimmer\n");
   printf("  walk in tall grass ':' to find wild pokemon\n");
-  printf("  walk into a trainer to battle\n\n");
+  printf("  walk into a trainer to battle\n");
+  printf("  step on 'C' to heal, 'M' to visit the mart\n\n");
   printf("press any key to return...\n");
   fflush(stdout);
   wait_any_key();
@@ -373,7 +374,8 @@ int main(int argc, char *argv[])
         int tx = pc.location.x + dx, ty = pc.location.y + dy;
         struct character_s *foe = currGrid->cmap[tx][ty];
         if (foe) {
-          trainer_battle(&pc_pokemon, read_key_blocking, foe);
+          int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
+          trainer_battle(&pc_pokemon, read_key_blocking, foe, md);
         }
         pc.next_turn += REST_COST;
       } else if (res >= PC_MOVE_EXIT_UP) {
@@ -383,10 +385,17 @@ int main(int argc, char *argv[])
         setup_map(currGrid);
         transitioned = true;
       } else {
-        /* Moved within the map; roll for a wild encounter on tall grass. */
-        if (currGrid->grid[pc.location.x][pc.location.y] ==
-                tallGrassTile.ascii &&
-            (rand() % 100) < ENCOUNTER_PROB) {
+        /* Moved within the map: buildings, then tall-grass encounters. */
+        char t = currGrid->grid[pc.location.x][pc.location.y];
+        if (t == pokemonCenter.ascii) {
+          pc_pokemon.cur_hp = pc_pokemon.hp;
+          snprintf(status, sizeof status, "Nurse Joy healed your %s!",
+                   species_name(pc_pokemon.species));
+        } else if (t == pokeMart.ascii) {
+          snprintf(status, sizeof status,
+                   "Welcome to the Pokemart! (nothing for sale yet)");
+        } else if (t == tallGrassTile.ascii &&
+                   (rand() % 100) < ENCOUNTER_PROB) {
           int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
           wild_encounter(&pc_pokemon, read_key_blocking, md);
         }

@@ -96,7 +96,7 @@ void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist)
 }
 
 void trainer_battle(pokemon_t *player, int (*getkey)(void),
-                    struct character_s *npc)
+                    struct character_s *npc, int manhattan_dist)
 {
   int sp;
 
@@ -107,7 +107,12 @@ void trainer_battle(pokemon_t *player, int (*getkey)(void),
     default:           sp = rand() % pokemon_num_species; break;
   }
 
-  pokemon_t enemy = make_pokemon(sp, 5 + rand() % 10);
+  /* Trainers scale with distance from the world center, a touch tougher
+   * than the wild pokemon at the same distance. */
+  int lvl = wild_level(manhattan_dist) + 2;
+  if (lvl > 100) lvl = 100;
+
+  pokemon_t enemy = make_pokemon(sp, lvl);
   printf("\nA trainer with a %s blocks your path!\n", species_name(enemy.species));
 
   if (run_battle(player, &enemy, getkey, "Trainer") == 1) {

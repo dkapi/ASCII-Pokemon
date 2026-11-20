@@ -9,6 +9,6 @@
 void starter_pick(pokemon_t *out, int (*getkey)(void));
 void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist);
 void trainer_battle(pokemon_t *player, int (*getkey)(void),
-                    struct character_s *npc);
+                    struct character_s *npc, int manhattan_dist);
 
 #endif /* BATTLE_H */
