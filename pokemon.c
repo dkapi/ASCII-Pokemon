@@ -1,38 +1,22 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "pokemon.h"
 
-const species_t pokemon_species[] = {
-  { "Bulbasaur",  45,  49,  49,  65,  65,  45, 4 },
-  { "Charmander", 39,  52,  43,  60,  50,  65, 2 },
-  { "Squirtle",   44,  48,  65,  50,  64,  43, 3 },
-  { "Pikachu",    35,  55,  40,  50,  50,  90, 5 },
-  { "Caterpie",   45,  30,  35,  20,  20,  45, 0 },
-  { "Pidgey",     40,  45,  40,  35,  35,  56, 6 },
-  { "Rattata",    30,  56,  35,  25,  35,  72, 1 },
-  { "Geodude",    40,  80, 100,  30,  30,  20, 7 },
-  { "Zubat",      40,  45,  35,  30,  40,  55, 8 },
-  { "Magikarp",   20,  10,  55,  15,  20,  80, 0 },
-  { "Gyarados",   95, 125,  79,  60, 100,  81, 9 },
-  { "Mewtwo",    106, 110,  90, 154,  90, 130, 9 },
-};
-const int pokemon_num_species =
-  (int) (sizeof(pokemon_species) / sizeof(pokemon_species[0]));
-
+/* Move list — indexed by the MOVE_* enum in pokemon.h. */
 const move_t pokemon_moves[] = {
-  { "Tackle",        40 },
-  { "Quick Attack",  40 },
-  { "Ember",         40 },
-  { "Water Gun",     40 },
-  { "Vine Whip",     45 },
-  { "Thunder Shock", 40 },
-  { "Gust",          40 },
-  { "Rock Throw",    50 },
-  { "Bite",          60 },
-  { "Hyper Beam",   150 },
+  [MOVE_TACKLE]        = { "Tackle",        40 },
+  [MOVE_QUICK_ATTACK]  = { "Quick Attack",  40 },
+  [MOVE_EMBER]         = { "Ember",         40 },
+  [MOVE_WATER_GUN]     = { "Water Gun",     40 },
+  [MOVE_VINE_WHIP]     = { "Vine Whip",     45 },
+  [MOVE_THUNDER_SHOCK] = { "Thunder Shock", 40 },
+  [MOVE_GUST]          = { "Gust",          40 },
+  [MOVE_ROCK_THROW]    = { "Rock Throw",    50 },
+  [MOVE_BITE]          = { "Bite",          60 },
+  [MOVE_HYPER_BEAM]    = { "Hyper Beam",   150 },
 };
-const int pokemon_num_moves =
-  (int) (sizeof(pokemon_moves) / sizeof(pokemon_moves[0]));
+const int pokemon_num_moves = NUM_MOVES;
 
 pokemon_t make_pokemon(int species, int level)
 {
@@ -51,7 +35,7 @@ pokemon_t make_pokemon(int species, int level)
   p.spdef = (s->base_spdef + (rand() & 0xf)) * 2 * level / 100 + 5;
   p.speed = (s->base_speed + (rand() & 0xf)) * 2 * level / 100 + 5;
   p.cur_hp = p.hp;
-  p.move0 = 0;           /* Tackle */
+  p.move0 = MOVE_TACKLE;
   p.move1 = s->sig_move;
 
   return p;
@@ -65,6 +49,16 @@ const char *species_name(int idx)
 const char *move_name(int idx)
 {
   return pokemon_moves[idx].name;
+}
+
+int species_index(const char *name)
+{
+  for (int i = 0; i < pokemon_num_species; i++) {
+    if (strcmp(pokemon_species[i].name, name) == 0) {
+      return i;
+    }
+  }
+  return 0;
 }
 
 /* Wild pokemon level scales with distance from world center (200,200). */

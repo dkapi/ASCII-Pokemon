@@ -14,6 +14,7 @@ add_executable(worldgen
   characters.c
   tiles.c
   pokemon.c
+  pokedex_gen12.c
   battle.c
 )
 

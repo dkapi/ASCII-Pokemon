@@ -64,21 +64,19 @@ static int run_battle(pokemon_t *player, pokemon_t *enemy, int (*getkey)(void),
 
 void starter_pick(pokemon_t *out, int (*getkey)(void))
 {
-  static const int starters[3] = { 0, 1, 2 };   /* Bulbasaur/Charmander/Squirtle */
-
   for (;;) {
-    printf("Choose your starter:\n");
-    printf("  1) %-12s 2) %-12s 3) %s\n",
-           species_name(starters[0]), species_name(starters[1]),
-           species_name(starters[2]));
+    printf("Choose your starter (Gen 1 & 2):\n");
+    for (int i = 0; i < NUM_STARTERS; i++) {
+      printf("  %d) %s\n", i + 1, species_name(starter_species[i]));
+    }
     printf("> ");
     fflush(stdout);
 
     int k = getkey();
-    int idx = (k == '1') ? 0 : (k == '2') ? 1 : (k == '3') ? 2 :
+    int idx = (k >= '1' && k <= '1' + NUM_STARTERS - 1) ? (k - '1') :
               (k < 0) ? 0 : -1;   /* EOF defaults to the first starter */
     if (idx >= 0) {
-      *out = make_pokemon(starters[idx], 5);
+      *out = make_pokemon(starter_species[idx], 5);
       printf("\nYou chose %s!\n", species_name(out->species));
       return;
     }
@@ -103,9 +101,9 @@ void trainer_battle(pokemon_t *player, int (*getkey)(void),
   int sp;
 
   switch (npc->ctype) {
-    case CHAR_HIKER:   sp = 7;  break;   /* Geodude */
-    case CHAR_SWIMMER: sp = 9;  break;   /* Magikarp */
-    case CHAR_RIVAL:   sp = 1;  break;   /* Charmander */
+    case CHAR_HIKER:   sp = species_index("Geodude");   break;
+    case CHAR_SWIMMER: sp = species_index("Magikarp");  break;
+    case CHAR_RIVAL:   sp = species_index("Charmander"); break;
     default:           sp = rand() % pokemon_num_species; break;
   }
 
