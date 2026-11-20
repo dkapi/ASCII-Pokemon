@@ -11,6 +11,7 @@
 #include "voronoi.h"
 #include "characters.h"
 #include "dijkstra.h"
+#include "heap.h"
 
 /* ------------------------------------------------------------------------- *
  * Terminal: raw mode so keys register instantly (no Enter required).        *
@@ -33,8 +34,6 @@ static void restore_terminal(void)
   tcsetattr(STDIN_FILENO, TCSAFLUSH, &saved_termios);
 }
 
-/* Arrow keys arrive as ESC [ A/B/C/D.  Codes sit above 0xFF so they can't
- * collide with printable ASCII. */
 enum { K_UP = 0x100, K_DOWN, K_LEFT, K_RIGHT };
 
 /* Returns the key value, or 0 when no key was pressed within the timeout,
@@ -65,6 +64,15 @@ static int read_key(void)
   }
 }
 
+static int read_key_blocking(void)
+{
+  int k;
+  while ((k = read_key()) == 0) {
+    /* wait for the player */
+  }
+  return k;
+}
+
 static void wait_any_key(void)
 {
   while (read_key() == 0) {
@@ -73,7 +81,7 @@ static void wait_any_key(void)
 }
 
 /* ------------------------------------------------------------------------- *
- * Rendering.                                                                *
+ * Rendering + map entry.                                                    *
  * ------------------------------------------------------------------------- */
 void print_map(terrain_map_t *map)
 {
@@ -110,7 +118,20 @@ void print_map(terrain_map_t *map)
   printf("%s", RESET);
 }
 
-/* Reset every map entry to a fresh PC + NPC population. */
+static void draw_frame(terrain_map_t *g, Location_t loc, const char *status)
+{
+  printf("%s", CLEARSCREEN);
+  print_map(g);
+  printf("%scurrent location: (%d,%d)   [?=help]%s\n",
+         WHITE, loc.x - 200, loc.y - 200, RESET);
+  if (status[0]) {
+    printf("%s%s%s\n", YELLOW, status, RESET);
+  }
+  fflush(stdout);
+}
+
+/* Reset the current map to a fresh PC + NPC population and rebuild the
+ * hiker/rival distance maps for the new PC position. */
 static void setup_map(terrain_map_t *g)
 {
   clear_characters(g);
@@ -119,50 +140,64 @@ static void setup_map(terrain_map_t *g)
   compute_dist_maps(g, &pc.location);
 }
 
-/* ------------------------------------------------------------------------- *
- * Input handling.                                                           *
- * ------------------------------------------------------------------------- */
-
-/* Move one world-map in direction 'n'/'s'/'e'/'w'.  Updates *loc in place
- * and returns true if the position changed (false = blocked by the edge). */
-static bool move_char(Location_t *loc, Gates_t *gates, int dir)
+/* Load an already-generated map, or generate it, at world location `loc`. */
+static terrain_map_t *load_map(terrain_map_t *(*worldMap)[WORLD_WIDTH],
+                               Location_t loc, Gates_t gates)
 {
-  switch (dir) {
-    case 'n':   /* north: +y */
-      if (loc->y == 400) return false;
-      loc->y++;
-      gates->bottom = (Location_t) { GRID_HEIGHT - 1, gates->top.y };
-      gates->top = gates->left = gates->right = (Location_t) { 0, 0 };
-      return true;
-
-    case 's':   /* south: -y */
-      if (loc->y == 0) return false;
-      loc->y--;
-      gates->top = (Location_t) { 0, gates->bottom.y };
-      gates->bottom = gates->left = gates->right = (Location_t) { 0, 0 };
-      return true;
-
-    case 'e':   /* east: +x */
-      if (loc->x == 400) return false;
-      loc->x++;
-      gates->left = (Location_t) { gates->right.x, 0 };
-      gates->top = gates->bottom = gates->right = (Location_t) { 0, 0 };
-      return true;
-
-    case 'w':   /* west: -x */
-      if (loc->x == 0) return false;
-      loc->x--;
-      gates->right = (Location_t) { gates->left.x, GRID_WIDTH - 1 };
-      gates->top = gates->bottom = gates->left = (Location_t) { 0, 0 };
-      return true;
-
-    default:
-      return false;
+  if (!worldMap[loc.x][loc.y]) {
+    terrain_map_t *g = malloc(sizeof *g);
+    assert(g);
+    g->location = loc;
+    generate_voronoi_map(g, gates);
+    worldMap[loc.x][loc.y] = g;
   }
+  return worldMap[loc.x][loc.y];
 }
 
-/* Read an integer from the terminal, echoing as the user types (raw mode
- * disables echo, so we do it manually). */
+static void rebuild_turn_queue(heap_t *turn)
+{
+  heap_delete(turn);
+  heap_init(turn, cmp_char_turn, NULL);
+
+  for (int i = 0; i < NUM_NPCS; i++) {
+    npc_list[i]->next_turn = 0;
+    heap_insert(turn, npc_list[i]);
+  }
+  pc.next_turn = 0;
+  heap_insert(turn, &pc);
+}
+
+/* Cross a border gate: update world coords + carry the exit gate across. */
+static Location_t leave_map(int exit, Location_t loc, Gates_t *gates)
+{
+  switch (exit) {
+    case PC_MOVE_EXIT_UP:    /* crossed top -> north (+y) */
+      loc.y++;
+      gates->bottom = (Location_t) { GRID_HEIGHT - 1, gates->top.y };
+      gates->top = gates->left = gates->right = (Location_t) { 0, 0 };
+      break;
+    case PC_MOVE_EXIT_DOWN:  /* crossed bottom -> south (-y) */
+      loc.y--;
+      gates->top = (Location_t) { 0, gates->bottom.y };
+      gates->bottom = gates->left = gates->right = (Location_t) { 0, 0 };
+      break;
+    case PC_MOVE_EXIT_LEFT:  /* crossed left -> west (-x) */
+      loc.x--;
+      gates->right = (Location_t) { gates->left.x, GRID_WIDTH - 1 };
+      gates->top = gates->bottom = gates->left = (Location_t) { 0, 0 };
+      break;
+    case PC_MOVE_EXIT_RIGHT: /* crossed right -> east (+x) */
+      loc.x++;
+      gates->left = (Location_t) { gates->right.x, 0 };
+      gates->top = gates->bottom = gates->right = (Location_t) { 0, 0 };
+      break;
+  }
+  return loc;
+}
+
+/* ------------------------------------------------------------------------- *
+ * Input.                                                                    *
+ * ------------------------------------------------------------------------- */
 static int read_int_prompt(const char *prompt)
 {
   char buf[16];
@@ -176,7 +211,7 @@ static int read_int_prompt(const char *prompt)
     ssize_t n = read(STDIN_FILENO, &c, 1);
     if (n < 1) continue;
     if (c == '\n' || c == '\r') break;
-    if ((c == 127 || c == 8) && i > 0) {   /* backspace */
+    if ((c == 127 || c == 8) && i > 0) {
       i--;
       printf("\b \b");
       fflush(stdout);
@@ -197,11 +232,12 @@ static void print_help(void)
 {
   printf("%s", CLEARSCREEN);
   printf("========== ASCII-Pokemon : controls ==========\n\n");
-  printf("  move          arrow keys, or n / s / e / w\n");
-  printf("  rest          any other key (NPCs still act)\n");
+  printf("  move          arrow keys, or n / s / e / w (one tile)\n");
+  printf("  rest          . or any other key\n");
   printf("  fly           f  (then enter x and y, -200..200)\n");
   printf("  help          h or ?\n");
   printf("  quit          q  (or Ctrl-C)\n\n");
+  printf("  time passes by move cost: path=10 grass=20 water=7\n");
   printf("  The world is 401 x 401 maps; the center is (0,0).\n\n");
   printf("  @ you  %% mountain  ^ tree  : grass  ~ water  # path\n");
   printf("  M mart  C center\n");
@@ -213,7 +249,7 @@ static void print_help(void)
 }
 
 /* ------------------------------------------------------------------------- *
- * Main.                                                                     *
+ * Main game loop: a turn queue keyed by accumulated move cost.              *
  * ------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
@@ -232,16 +268,10 @@ int main(int argc, char *argv[])
     calloc(WORLD_HEIGHT, sizeof *worldMap);
   assert(worldMap);
 
-  terrain_map_t *currGrid = malloc(sizeof *currGrid);
-  assert(currGrid);
-
   Location_t currLoc = { .x = 200, .y = 200 };
-  currGrid->location = currLoc;
   Gates_t gates = { 0 };
-  generate_voronoi_map(currGrid, gates);
-  worldMap[currLoc.x][currLoc.y] = currGrid;
+  terrain_map_t *currGrid = load_map(worldMap, currLoc, gates);
   gates = currGrid->gates;
-
   setup_map(currGrid);
 
   if (debug) {
@@ -251,31 +281,40 @@ int main(int argc, char *argv[])
     print_dist_map(rival_dist);
   }
 
-  printf("%s", CLEARSCREEN);
-  print_map(currGrid);
-  printf("%scurrent location: (%d,%d)   [?=help]%s\n",
-         WHITE, currLoc.x - 200, currLoc.y - 200, RESET);
-  fflush(stdout);
-
   enable_raw_mode();
+
+  heap_t turn;
+  heap_init(&turn, cmp_char_turn, NULL);
+  rebuild_turn_queue(&turn);
 
   char status[96];
   bool shouldQuit = false;
-  while (!shouldQuit) {
-    int key = read_key();
-    bool moved = false;
-    Location_t newLoc = currLoc;
+  draw_frame(currGrid, currLoc, "");
 
+  while (!shouldQuit) {
+    struct character_s *cur = (struct character_s *) heap_remove_min(&turn);
+    if (!cur) {
+      break;
+    }
+
+    if (cur != &pc) {
+      /* NPC's turn: act, then re-enter the queue at its new next_turn. */
+      move_npc(currGrid, cur);
+      heap_insert(&turn, cur);
+      continue;
+    }
+
+    /* ----- PC's turn: render, then wait for the player. ----- */
+    draw_frame(currGrid, currLoc, status);
     status[0] = '\0';
 
+    int key = read_key_blocking();
+    int dx = 0, dy = 0;
+    bool move_requested = false;
+    bool transitioned = false;
+
     switch (key) {
-      case 0:
-        continue;             /* no key yet */
-
-      case -1:                /* stdin reached end-of-input */
-        shouldQuit = true;
-        break;
-
+      case -1:
       case 'q':
       case 'Q':
         shouldQuit = true;
@@ -284,16 +323,19 @@ int main(int argc, char *argv[])
       case 'h':
       case '?':
         print_help();
-        break;
+        break;   /* help costs no turn */
 
       case 'f': {
         int x = read_int_prompt("fly to x [-200, 200]: ");
         int y = read_int_prompt("fly to y [-200, 200]: ");
         if (x >= -200 && x <= 200 && y >= -200 && y <= 200) {
-          newLoc.x = x + 200;
-          newLoc.y = y + 200;
+          currLoc.x = x + 200;
+          currLoc.y = y + 200;
           gates = (Gates_t) { 0 };
-          moved = true;
+          currGrid = load_map(worldMap, currLoc, gates);
+          gates = currGrid->gates;
+          setup_map(currGrid);
+          transitioned = true;
         } else {
           snprintf(status, sizeof status,
                    "you cant fly that far on your pidgey!");
@@ -301,43 +343,14 @@ int main(int argc, char *argv[])
         break;
       }
 
-      case 'n': case K_UP:
-        if (!move_char(&newLoc, &gates, 'n')) {
-          snprintf(status, sizeof status,
-                   "you've reached the border pokemon master!");
-        } else {
-          moved = true;
-        }
-        break;
-
-      case 's': case K_DOWN:
-        if (!move_char(&newLoc, &gates, 's')) {
-          snprintf(status, sizeof status,
-                   "you've reached the border pokemon master!");
-        } else {
-          moved = true;
-        }
-        break;
-
-      case 'e': case K_RIGHT:
-        if (!move_char(&newLoc, &gates, 'e')) {
-          snprintf(status, sizeof status,
-                   "you've reached the border pokemon master!");
-        } else {
-          moved = true;
-        }
-        break;
-
-      case 'w': case K_LEFT:
-        if (!move_char(&newLoc, &gates, 'w')) {
-          snprintf(status, sizeof status,
-                   "you've reached the border pokemon master!");
-        } else {
-          moved = true;
-        }
-        break;
+      case 'n': case K_UP:    dx = -1; dy = 0;  move_requested = true; break;
+      case 's': case K_DOWN:  dx =  1; dy = 0;  move_requested = true; break;
+      case 'e': case K_RIGHT: dx =  0; dy = 1;  move_requested = true; break;
+      case 'w': case K_LEFT:  dx =  0; dy = -1; move_requested = true; break;
 
       default:
+        /* rest: no move, but the turn is consumed */
+        pc.next_turn += REST_COST;
         break;
     }
 
@@ -345,36 +358,34 @@ int main(int argc, char *argv[])
       break;
     }
 
-    if (moved) {
-      if (!worldMap[newLoc.x][newLoc.y]) {
-        terrain_map_t *newGrid = malloc(sizeof *newGrid);
-        assert(newGrid);
-        newGrid->location = newLoc;
-        generate_voronoi_map(newGrid, gates);
-        worldMap[newLoc.x][newLoc.y] = newGrid;
+    if (move_requested) {
+      int res = pc_try_move(currGrid, dx, dy);
+      if (res == PC_MOVE_BLOCKED) {
+        snprintf(status, sizeof status, "that way is blocked");
+        pc.next_turn += REST_COST;
+      } else if (res >= PC_MOVE_EXIT_UP) {
+        currLoc = leave_map(res, currLoc, &gates);
+        currGrid = load_map(worldMap, currLoc, gates);
+        gates = currGrid->gates;
+        setup_map(currGrid);
+        transitioned = true;
       }
-      currGrid = worldMap[newLoc.x][newLoc.y];
-      setup_map(currGrid);
-      currLoc = newLoc;
-      gates = currGrid->gates;
+      /* else: moved within the map; pc_try_move already added the cost */
     }
 
-    /* NPCs act every turn, whether the PC moved or rested. */
-    move_npcs(currGrid);
-
-    printf("%s", CLEARSCREEN);
-    print_map(currGrid);
-    printf("%scurrent location: (%d,%d)   [?=help]%s\n",
-           WHITE, currLoc.x - 200, currLoc.y - 200, RESET);
-    if (status[0]) {
-      printf("%s%s%s\n", YELLOW, status, RESET);
+    if (transitioned) {
+      rebuild_turn_queue(&turn);
+      continue;
     }
-    fflush(stdout);
+
+    heap_insert(&turn, &pc);
   }
 
   restore_terminal();
   printf("%s", CLEARSCREEN);
   printf("But how are you going to be the very best if you quit..\n");
+
+  heap_delete(&turn);   /* free the remaining turn-queue nodes */
 
   for (i = 0; i < WORLD_HEIGHT; i++) {
     for (j = 0; j < WORLD_WIDTH; j++) {
