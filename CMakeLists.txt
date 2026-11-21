@@ -18,6 +18,7 @@ add_executable(worldgen
   battle.c
   msg.c
   noise.c
+  cave.c
 )
 
 target_compile_options(worldgen PRIVATE -Wall -Wextra)

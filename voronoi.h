@@ -33,4 +33,6 @@ void place_center(terrain_map_t *m);
 
 void place_mart(terrain_map_t *m);
 
+void place_cave_entrances(terrain_map_t *m);
+
 #endif /* _WORLDGEN_VORONOI_H */

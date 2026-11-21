@@ -15,6 +15,7 @@ enum tile_e {
   TileCount,
   PokeMart,
   PokeCenter,
+  CaveEntrance,
 };
 
 struct tile_s {
@@ -33,6 +34,7 @@ extern struct tile_s sandTile;
 extern struct tile_s  snowTile;
 extern struct tile_s pokemonCenter;
 extern struct tile_s pokeMart;
+extern struct tile_s caveEntranceTile;
 
 /* Every map tile, indexed directly by tile_e (0 .. TileCount-1). */
 extern const struct tile_s *tiles[TileCount];

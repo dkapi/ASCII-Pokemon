@@ -60,4 +60,7 @@ int encounter_prob(char tile);
 /* A random species appropriate to `tile` (fallback: any species). */
 int encounter_species(char tile);
 
+/* A random species from the cave-only encounter pool. */
+int cave_encounter_species(void);
+
 #endif /* POKEMON_H */

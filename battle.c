@@ -141,6 +141,22 @@ void starter_pick(pokemon_t *out, int (*getkey)(void))
   }
 }
 
+/* Shared tail of a wild battle: a catch joins the party, a win just logs. */
+static void finish_wild_battle(pokemon_t *wild, int res)
+{
+  if (res == 2) {
+    if (party_count < MAX_PARTY) {
+      party[party_count++] = *wild;
+      msg_good("%s joined your party! (%d/%d)",
+               species_name(wild->species), party_count, MAX_PARTY);
+    } else {
+      msg_bad("Party is full - %s scurried away!", species_name(wild->species));
+    }
+  } else if (res == 1) {
+    msg_good("The wild %s was defeated!", species_name(wild->species));
+  }
+}
+
 void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist,
                     char tile)
 {
@@ -149,17 +165,20 @@ void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist,
   msg("A wild %s appeared!", species_name(wild.species));
 
   int res = run_battle(player, &wild, getkey, "Wild", true);
-  if (res == 2) {
-    if (party_count < MAX_PARTY) {
-      party[party_count++] = wild;
-      msg_good("%s joined your party! (%d/%d)",
-               species_name(wild.species), party_count, MAX_PARTY);
-    } else {
-      msg_bad("Party is full - %s scurried away!", species_name(wild.species));
-    }
-  } else if (res == 1) {
-    msg_good("The wild %s was defeated!", species_name(wild.species));
-  }
+  finish_wild_battle(&wild, res);
+}
+
+void wild_encounter_cave(pokemon_t *player, int (*getkey)(void),
+                         int manhattan_dist)
+{
+  int lvl = wild_level(manhattan_dist) + 5;   /* caves run hotter */
+  if (lvl > 100) lvl = 100;
+
+  pokemon_t wild = make_pokemon(cave_encounter_species(), lvl);
+  msg("A wild %s appeared!", species_name(wild.species));
+
+  int res = run_battle(player, &wild, getkey, "Wild", true);
+  finish_wild_battle(&wild, res);
 }
 
 void trainer_battle(pokemon_t *player, int (*getkey)(void),

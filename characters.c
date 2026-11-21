@@ -81,6 +81,7 @@ uint32_t pc_cost(struct tile_s tile)
     case PokeCenter:
     case PokeMart:
     case Clearing:
+    case CaveEntrance:
       return 10;
     case TallGrass:
       return 20;

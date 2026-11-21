@@ -48,8 +48,17 @@ instead of the default Voronoi regions.
 - **World** — 401 × 401 maps, each 80 × 21, centered on `(0,0)`. Terrain comes
   from Voronoi regions (or continuous value-noise with `--noise`): mountain `%`,
   tree `^`, tall grass `:`, water `~`, clearing `.`, sand `=`, snow `*`, paths
-  `#`, plus Pokémon Centers `C` and Marts `M`. A path (the "route") connects the
-  map's four border gates so you can walk between maps.
+  `#`, plus Pokémon Centers `C`, Marts `M`, and cave entrances `O`. A path (the
+  "route") connects the map's four border gates so you can walk between maps.
+
+- **Caves** — step on a cave entrance `O` to descend into a parallel underground
+  layer. Cave maps are organically dug with cellular automata and are dark: you
+  see only a round torch-lit radius around you. They spawn a **cave-only**
+  encounter pool (Zubat, Geodude, Onix, Clefairy, …) several levels hotter than
+  the overworld, and hold floor loot — `$` money and `!` potions/balls. Cave
+  maps link sideways through border tunnels (the same gate system as the
+  overworld), and you find `>` to climb back out at the entrance you came in
+  through.
 
 - **Turns** — every actor is scheduled on a min-heap keyed by accumulated move
   cost (path 10, grass 20, water 7), so time passes fairly and in cost order.

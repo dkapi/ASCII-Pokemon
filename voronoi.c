@@ -34,6 +34,7 @@ void generate_voronoi_map(terrain_map_t *map, Gates_t gates)
   generate_map_path(map, gates);
   place_center(map);
   place_mart(map);
+  place_cave_entrances(map);
 }
 
 void generate_map_border(terrain_map_t *gridMap)
@@ -290,4 +291,63 @@ void place_mart(terrain_map_t *m)
 void place_center(terrain_map_t *m)
 {
   place_building(m, pokemonCenter.ascii);
+}
+
+/* Walkable for the player: anything except mountain, tree and water. */
+static bool cave_walkable(char c)
+{
+  return c != mountainTile.ascii && c != treeTile.ascii && c != waterTile.ascii;
+}
+
+/* Cave entrances ('O') sit on mountain tiles, but only ones the player can
+ * actually reach: flood-fill from the route through walkable cells, then place
+ * an entrance only on a mountain adjacent to a reachable walkable cell.  (A
+ * naive "adjacent to any walkable cell" test traps entrances in mountain
+ * pockets the route never touches.) */
+void place_cave_entrances(terrain_map_t *m)
+{
+  char reach[GRID_HEIGHT][GRID_WIDTH] = { 0 };   /* per-map, must NOT be static */
+  static int qx[(GRID_HEIGHT) * (GRID_WIDTH)];
+  static int qy[(GRID_HEIGHT) * (GRID_WIDTH)];
+  static const int dx[4] = { 1, -1, 0, 0 };
+  static const int dy[4] = { 0, 0, 1, -1 };
+  int head = 0, tail = 0;
+  int x, y;
+
+  /* Seed the flood with the route; the route is always reachable. */
+  for (x = 1; x < GRID_HEIGHT - 1; x++)
+    for (y = 1; y < GRID_WIDTH - 1; y++)
+      if (m->grid[x][y] == pathTile.ascii) {
+        reach[x][y] = 1;
+        qx[tail] = x; qy[tail] = y; tail++;
+      }
+
+  while (head < tail) {
+    x = qx[head]; y = qy[head]; head++;
+    for (int d = 0; d < 4; d++) {
+      int nx = x + dx[d], ny = y + dy[d];
+      if (nx < 1 || nx >= GRID_HEIGHT - 1 || ny < 1 || ny >= GRID_WIDTH - 1) continue;
+      if (reach[nx][ny]) continue;
+      if (!cave_walkable(m->grid[nx][ny])) continue;
+      reach[nx][ny] = 1;
+      qx[tail] = nx; qy[tail] = ny; tail++;
+    }
+  }
+
+  int placed = 0;
+  for (int attempts = 0; attempts < 3000 && placed < 2; attempts++) {
+    x = 1 + rand() % (GRID_HEIGHT - 2);
+    y = 1 + rand() % (GRID_WIDTH - 2);
+    if (m->grid[x][y] != mountainTile.ascii) continue;
+
+    for (int d = 0; d < 4; d++) {
+      int nx = x + dx[d], ny = y + dy[d];
+      if (nx < 1 || nx >= GRID_HEIGHT - 1 || ny < 1 || ny >= GRID_WIDTH - 1) continue;
+      if (cave_walkable(m->grid[nx][ny]) && reach[nx][ny]) {
+        m->grid[x][y] = caveEntranceTile.ascii;
+        placed++;
+        break;
+      }
+    }
+  }
 }

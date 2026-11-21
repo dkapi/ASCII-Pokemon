@@ -62,6 +62,12 @@ struct tile_s pokeMart = {
   .tile_idx = PokeMart,
 };
 
+struct tile_s caveEntranceTile = {
+  .name = "cave-entrance",
+  .ascii = 'O',
+  .tile_idx = CaveEntrance,
+};
+
 /* Designated initializers keep this aligned with the enum regardless of
  * ordering.  (Previously Path was missing and Water occupied its slot.) */
 const struct tile_s *tiles[TileCount] = {
@@ -87,6 +93,7 @@ struct tile_s *char_to_tile_s(char terrain)
     case '*': return &snowTile;
     case 'C': return &pokemonCenter;
     case 'M': return &pokeMart;
+    case 'O': return &caveEntranceTile;
     case '#': return &pathTile;
     default:
       fprintf(stderr, "unknown terrain '%c' in char_to_tile_s\n", terrain);

@@ -14,6 +14,14 @@
 #include "battle.h"
 #include "msg.h"
 #include "ui.h"
+#include "cave.h"
+
+/* Cave-layer state: whether the player is underground, plus the overworld
+ * spot they descended from, so ascending always returns home. */
+static bool in_cave = false;
+static int  vision_radius = 0;             /* 0 = full light (overworld) */
+static Location_t cave_home;               /* overworld map coord descended from */
+static Location_t cave_home_tile;          /* the 'O' tile descended through */
 
 /* ------------------------------------------------------------------------- *
  * ncurses initialization (color pairs are defined in ui.h).                 *
@@ -63,6 +71,10 @@ static int tile_pair(char c)
     case '*': return CP_WHITE;    /* snow */
     case 'C': return CP_RED;
     case 'M': return CP_LBLUE;
+    case 'O': return CP_MAGENTA;  /* cave entrance */
+    case '>': return CP_WHITE;    /* cave exit stair */
+    case '$': return CP_YELLOW;   /* loot: money */
+    case '!': return CP_CYAN;     /* loot: item */
     default:  return CP_WHITE;
   }
 }
@@ -75,6 +87,16 @@ void print_map(terrain_map_t *map)
     for (j = 0; j < GRID_WIDTH; j++) {
       char c;
       int pair;
+
+      /* Cave darkness: hide every cell outside the circular torch radius. */
+      if (vision_radius > 0) {
+        int dx = i - pc.location.x;
+        int dy = j - pc.location.y;
+        if (dx * dx + dy * dy > vision_radius * vision_radius) {
+          mvaddch(i, j, ' ');
+          continue;
+        }
+      }
 
       if (map->cmap[i][j]) {
         c = map->cmap[i][j]->ascii;
@@ -178,7 +200,8 @@ static void draw_legend_panel(int y, int x, int w)
   static const struct leg left[] = {
     { '%', "mountain" }, { '^', "tree" }, { ':', "grass" },
     { '~', "water" }, { '#', "path" }, { '.', "clear" },
-    { '=', "sand" }, { '*', "snow" }, { '@', "you" },
+    { '=', "sand" }, { '*', "snow" }, { 'O', "cave in" },
+    { '>', "cave out" }, { '$', "loot" }, { '@', "you" },
   };
   static const struct leg right[] = {
     { 'M', "mart" }, { 'C', "center" },
@@ -241,6 +264,28 @@ static void setup_map(terrain_map_t *g, Location_t pc_entry)
   compute_dist_maps(g, &pc.location);
 }
 
+/* Caves have no trainers: place only the PC.  With a door (sideways tunnel)
+ * spawn on it; otherwise drop onto a random floor cell. */
+static void setup_map_cave(terrain_map_t *g, Location_t entry)
+{
+  clear_characters(g);
+  if (entry.x || entry.y) {
+    place_pc(g, entry);
+  } else {
+    Location_t l;
+    int attempts = 0;
+    do {
+      l.x = 1 + rand() % (GRID_HEIGHT - 3);
+      l.y = 1 + rand() % (GRID_WIDTH - 3);
+    } while (g->grid[l.x][l.y] != CAVE_FLOOR && ++attempts < 10000);
+    g->cmap[l.x][l.y] = &pc;
+    pc.location.x = l.x;
+    pc.location.y = l.y;
+    pc.next_turn = 0;
+    pc.seq_num = NUM_NPCS;
+  }
+}
+
 /* Load an already-generated map, or generate it, at world location `loc`. */
 static terrain_map_t *load_map(terrain_map_t *(*worldMap)[WORLD_WIDTH],
                                Location_t loc, Gates_t gates)
@@ -255,17 +300,36 @@ static terrain_map_t *load_map(terrain_map_t *(*worldMap)[WORLD_WIDTH],
   return worldMap[loc.x][loc.y];
 }
 
+/* Load an already-generated cave map, or generate it, at world location loc.
+ * The cave grid lives in a parallel cache so overworld and cave maps never
+ * overwrite each other. */
+static terrain_map_t *load_cave_map(terrain_map_t *(*worldMapCave)[WORLD_WIDTH],
+                                    Location_t loc, Gates_t gates)
+{
+  if (!worldMapCave[loc.x][loc.y]) {
+    terrain_map_t *g = malloc(sizeof *g);
+    assert(g);
+    g->location = loc;
+    generate_cave_map(g, gates);
+    worldMapCave[loc.x][loc.y] = g;
+  }
+  return worldMapCave[loc.x][loc.y];
+}
+
 static void rebuild_turn_queue(heap_t *turn)
 {
   heap_delete(turn);
   heap_init(turn, cmp_char_turn, NULL);
 
+  pc.next_turn = 0;
+  heap_insert(turn, &pc);
+
+  if (in_cave) return;   /* caves have no trainers; the PC acts alone */
+
   for (int i = 0; i < NUM_NPCS; i++) {
     npc_list[i]->next_turn = 0;
     heap_insert(turn, npc_list[i]);
   }
-  pc.next_turn = 0;
-  heap_insert(turn, &pc);
 }
 
 /* Cross a border gate: update world coords + carry the exit gate across. */
@@ -342,7 +406,10 @@ static void print_help(void)
   printw("        s sentry  e explorer  m swimmer\n");
   printw("  walk in tall grass ':' to find wild pokemon\n");
   printw("  walk into a trainer to battle\n");
-  printw("  step on 'C' to heal, 'M' to visit the mart\n\n");
+  printw("  step on 'C' to heal, 'M' to visit the mart\n");
+  printw("  'O' is a cave entrance: descend into a dark cavern\n");
+  printw("    (limited torch light, stronger cave-only wilds)\n");
+  printw("    pick up '$' money and '!' items, find '>' to climb out\n\n");
   printw("press any key to return...\n");
   refresh();
   wait_any_key();
@@ -425,6 +492,10 @@ int main(int argc, char *argv[])
     calloc(WORLD_HEIGHT, sizeof *worldMap);
   assert(worldMap);
 
+  terrain_map_t *(*worldMapCave)[WORLD_WIDTH] =
+    calloc(WORLD_HEIGHT, sizeof *worldMapCave);
+  assert(worldMapCave);
+
   Location_t currLoc = { .x = 200, .y = 200 };
   Gates_t gates = { 0 };
   terrain_map_t *currGrid = load_map(worldMap, currLoc, gates);
@@ -449,9 +520,11 @@ int main(int argc, char *argv[])
     for (i = 0; i < WORLD_HEIGHT; i++) {
       for (j = 0; j < WORLD_WIDTH; j++) {
         free(worldMap[i][j]);
+        free(worldMapCave[i][j]);
       }
     }
     free(worldMap);
+    free(worldMapCave);
     return 0;
   }
 
@@ -556,25 +629,68 @@ int main(int argc, char *argv[])
       } else if (res >= PC_MOVE_EXIT_UP) {
         currLoc = leave_map(res, currLoc, &gates);
         Location_t entry = entry_gate(gates);   /* the door we walked through */
-        currGrid = load_map(worldMap, currLoc, gates);
-        gates = currGrid->gates;
-        setup_map(currGrid, entry);
+        if (in_cave) {
+          currGrid = load_cave_map(worldMapCave, currLoc, gates);
+          gates = currGrid->gates;
+          setup_map_cave(currGrid, entry);
+        } else {
+          currGrid = load_map(worldMap, currLoc, gates);
+          gates = currGrid->gates;
+          setup_map(currGrid, entry);
+        }
         transitioned = true;
       } else {
-        /* Moved within the map: buildings, then tall-grass encounters. */
+        /* Moved within the map. */
         char t = currGrid->grid[pc.location.x][pc.location.y];
-        if (t == pokemonCenter.ascii) {
-          for (i = 0; i < party_count; i++) {
-            party[i].cur_hp = party[i].hp;   /* the center heals the whole party */
-          }
-          msg_good("Nurse Joy healed your party!");
-        } else if (t == pokeMart.ascii) {
-          shop_mart(read_key_blocking);
-        } else {
-          int prob = encounter_prob(t);
-          if (prob > 0 && (rand() % 100) < prob) {
+        int tx = pc.location.x, ty = pc.location.y;
+
+        if (in_cave) {
+          if (t == CAVE_EXIT) {
+            /* climb out, back to the overworld we descended from */
+            in_cave = false;
+            vision_radius = 0;
+            currLoc = cave_home;
+            currGrid = load_map(worldMap, currLoc, (Gates_t) { 0 });
+            gates = currGrid->gates;
+            setup_map(currGrid, cave_home_tile);
+            transitioned = true;
+          } else if (t == CAVE_MONEY) {
+            int amt = 200 + rand() % 401;
+            bag.money += amt;
+            currGrid->grid[tx][ty] = CAVE_FLOOR;
+            msg_good("You found $%d in the gloom!", amt);
+          } else if (t == CAVE_ITEM) {
+            if (rand() & 1) { bag.potions += 2; msg_good("You found 2 potions!"); }
+            else { bag.pokeballs += 2; msg_good("You found 2 pokeballs!"); }
+            currGrid->grid[tx][ty] = CAVE_FLOOR;
+          } else if ((rand() % 100) < CAVE_ENCOUNTER_PROB) {
             int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
-            wild_encounter(&party[party_active], read_key_blocking, md, t);
+            wild_encounter_cave(&party[party_active], read_key_blocking, md);
+          }
+        } else {
+          if (t == pokemonCenter.ascii) {
+            for (i = 0; i < party_count; i++) {
+              party[i].cur_hp = party[i].hp;   /* the center heals the whole party */
+            }
+            msg_good("Nurse Joy healed your party!");
+          } else if (t == pokeMart.ascii) {
+            shop_mart(read_key_blocking);
+          } else if (t == caveEntranceTile.ascii) {
+            /* descend into the cave under this map */
+            cave_home = currLoc;
+            cave_home_tile = pc.location;
+            in_cave = true;
+            vision_radius = CAVE_VISION;
+            currGrid = load_cave_map(worldMapCave, currLoc, (Gates_t) { 0 });
+            gates = currGrid->gates;
+            setup_map_cave(currGrid, (Location_t) { 0, 0 });
+            transitioned = true;
+          } else {
+            int prob = encounter_prob(t);
+            if (prob > 0 && (rand() % 100) < prob) {
+              int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
+              wild_encounter(&party[party_active], read_key_blocking, md, t);
+            }
           }
         }
       }
@@ -586,8 +702,11 @@ int main(int argc, char *argv[])
     }
 
     /* Track the PC's live position so the hiker and rival actually chase
-     * you, not the spot where you first spawned. */
-    compute_dist_maps(currGrid, &pc.location);
+     * you, not the spot where you first spawned.  (Skipped in caves, which
+     * have no trainers to chase.) */
+    if (!in_cave) {
+      compute_dist_maps(currGrid, &pc.location);
+    }
 
     heap_insert(&turn, &pc);
   }
@@ -600,9 +719,11 @@ int main(int argc, char *argv[])
   for (i = 0; i < WORLD_HEIGHT; i++) {
     for (j = 0; j < WORLD_WIDTH; j++) {
       free(worldMap[i][j]);
+      free(worldMapCave[i][j]);
     }
   }
   free(worldMap);
+  free(worldMapCave);
 
   return 0;
 }

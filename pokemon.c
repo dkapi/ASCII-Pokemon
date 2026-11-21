@@ -114,6 +114,13 @@ static const char *const pool_snow[] = {
   "Swinub", "Piloswine", "Sneasel", "Delibird", "Smoochum",
 };
 
+/* Cave-only pool: rock/ground/poison/bug/bat plus a couple of rarities.
+ * This is what makes caves worth braving -- these don't spawn elsewhere. */
+static const char *const pool_cave[] = {
+  "Zubat", "Geodude", "Onix", "Paras", "Clefairy", "Golbat", "Cubone",
+  "Diglett", "Scyther", "Larvitar", "Graveler", "Machop", "Mankey",
+};
+
 static int pick_from(const char *const *pool, int n)
 {
   return species_index(pool[rand() % n]);
@@ -128,6 +135,11 @@ int encounter_species(char tile)
     case '*': return pick_from(pool_snow,  (int)(sizeof pool_snow  / sizeof *pool_snow));
     default:  return rand() % pokemon_num_species;
   }
+}
+
+int cave_encounter_species(void)
+{
+  return pick_from(pool_cave, (int)(sizeof pool_cave / sizeof *pool_cave));
 }
 
 int encounter_prob(char tile)
