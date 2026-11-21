@@ -129,6 +129,37 @@ static void hp_bar(char out[13], int cur, int max)
   out[12] = '\0';
 }
 
+/* HP fraction -> display color: green >=50%, amber >=25%, else red. */
+static int hp_color(int cur, int max)
+{
+  int pct;
+  if (max <= 0) return CP_RED;
+  pct = cur * 100 / max;
+  if (pct >= 50) return CP_GREEN;
+  if (pct >= 25) return CP_YELLOW;
+  return CP_RED;
+}
+
+/* Legend glyph color mirrors the map: terrain via tile_pair(), NPCs cyan. */
+static int legend_color(char c)
+{
+  switch (c) {
+    case 'h': case 'r': case 'p': case 's':
+    case 'w': case 'e': case 'm':
+      return CP_CYAN;
+    default:
+      return tile_pair(c);
+  }
+}
+
+static void colored_ch(int y, int x, char c)
+{
+  int p = legend_color(c);
+  attron(COLOR_PAIR(p));
+  mvaddch(y, x, c);
+  attroff(COLOR_PAIR(p));
+}
+
 static void draw_box(int y, int x, int h, int w)
 {
   mvhline(y, x, '-', w);
@@ -149,12 +180,17 @@ static void draw_party_panel(int y, int x, int w)
   for (int i = 0; i < MAX_PARTY; i++) {
     if (i < party_count) {
       char bar[13];
+      int pair = hp_color(party[i].cur_hp, party[i].hp);
+      bool active = (i == party_active);
       hp_bar(bar, party[i].cur_hp, party[i].hp);
-      if (i == party_active) attron(A_BOLD);
-      mvprintw(y + 2 + i, x + 2, "%c%d) %-11s Lv.%-3d %s",
-               (i == party_active) ? '*' : ' ', i + 1,
-               species_name(party[i].species), party[i].level, bar);
-      if (i == party_active) attroff(A_BOLD);
+      if (active) attron(A_BOLD);
+      mvprintw(y + 2 + i, x + 2, "%c%d) %-11s Lv.%-3d ",
+               active ? '*' : ' ', i + 1,
+               species_name(party[i].species), party[i].level);
+      if (active) attroff(A_BOLD);
+      attron(COLOR_PAIR(pair));
+      printw("%s", bar);
+      attroff(COLOR_PAIR(pair));
     } else {
       mvprintw(y + 2 + i, x + 2, " %d) %-11s", i + 1, "(empty)");
     }
@@ -163,18 +199,30 @@ static void draw_party_panel(int y, int x, int w)
 
 static void draw_legend_panel(int y, int x, int w)
 {
-  static const char *leg[] = {
-    "% mtn    ^ tree   ~ water",
-    ": grass  # path   . clear",
-    "M mart   C center @ you",
-    "h hiker  r rival   p pacer",
-    "s sentry w wander  e explorer",
-    "m swimmer",
+  struct leg { char g; const char *label; };
+  static const struct leg terrain[] = {
+    { '%', "mountain" }, { '^', "tree" }, { ':', "grass" },
+    { '~', "water" }, { '#', "path" }, { '.', "clear" },
+    { 'M', "mart" }, { 'C', "center" }, { '@', "you" },
   };
-  draw_box(y, x, 9, w);
+  static const struct leg npcs[] = {
+    { 'h', "hiker" }, { 'r', "rival" }, { 'p', "pacer" },
+    { 's', "sentry" }, { 'w', "wanderer" }, { 'e', "explorer" },
+    { 'm', "swimmer" },
+  };
+  int nter = (int)(sizeof terrain / sizeof terrain[0]);
+  int nnpc = (int)(sizeof npcs / sizeof npcs[0]);
+
+  draw_box(y, x, nter + 3, w);   /* header + 9 rows + 2 borders */
   mvprintw(y + 1, x + 2, "LEGEND");
-  for (int i = 0; i < 6; i++) {
-    mvprintw(y + 2 + i, x + 2, "%s", leg[i]);
+
+  for (int i = 0; i < nter; i++) {
+    colored_ch(y + 2 + i, x + 2, terrain[i].g);
+    mvprintw(y + 2 + i, x + 4, "%-10s", terrain[i].label);
+  }
+  for (int i = 0; i < nnpc; i++) {
+    colored_ch(y + 2 + i, x + 20, npcs[i].g);
+    mvprintw(y + 2 + i, x + 22, "%-9s", npcs[i].label);
   }
 }
 
