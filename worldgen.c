@@ -13,15 +13,11 @@
 #include "heap.h"
 #include "battle.h"
 #include "msg.h"
+#include "ui.h"
 
 /* ------------------------------------------------------------------------- *
- * ncurses initialization + color pairs.                                     *
+ * ncurses initialization (color pairs are defined in ui.h).                 *
  * ------------------------------------------------------------------------- */
-enum {
-  CP_WHITE = 1, CP_CYAN, CP_MAGENTA, CP_YELLOW,
-  CP_BLUE, CP_GREEN, CP_BROWN, CP_RED, CP_LBLUE,
-};
-
 static void init_curses(void)
 {
   initscr();
@@ -115,29 +111,6 @@ static void compute_layout(void)
   log_y = GRID_HEIGHT + 1;
   log_h = LINES - log_y;
   show_log = (log_h >= 2);
-}
-
-/* Render a 10-segment HP bar into `out` (12 chars, NUL-terminated). */
-static void hp_bar(char out[13], int cur, int max)
-{
-  int filled = (max > 0) ? (cur * 10) / max : 0;
-  if (filled < 0)  filled = 0;
-  if (filled > 10) filled = 10;
-  out[0] = '[';
-  for (int i = 0; i < 10; i++) out[1 + i] = (i < filled) ? '#' : '.';
-  out[11] = ']';
-  out[12] = '\0';
-}
-
-/* HP fraction -> display color: green >=50%, amber >=25%, else red. */
-static int hp_color(int cur, int max)
-{
-  int pct;
-  if (max <= 0) return CP_RED;
-  pct = cur * 100 / max;
-  if (pct >= 50) return CP_GREEN;
-  if (pct >= 25) return CP_YELLOW;
-  return CP_RED;
 }
 
 /* Legend glyph color mirrors the map: terrain via tile_pair(), NPCs cyan. */
@@ -476,7 +449,7 @@ int main(int argc, char *argv[])
           setup_map(currGrid, (Location_t) { 0, 0 });   /* fly: random spawn */
           transitioned = true;
         } else {
-          msg("You can't fly that far on your pidgey!");
+          msg_bad("You can't fly that far on your pidgey!");
         }
         break;
       }
@@ -523,7 +496,7 @@ int main(int argc, char *argv[])
           for (i = 0; i < party_count; i++) {
             party[i].cur_hp = party[i].hp;   /* the center heals the whole party */
           }
-          msg("Nurse Joy healed your party!");
+          msg_good("Nurse Joy healed your party!");
         } else if (t == pokeMart.ascii) {
           shop_mart(read_key_blocking);
         } else if (t == tallGrassTile.ascii &&
