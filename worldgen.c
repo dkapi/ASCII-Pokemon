@@ -346,6 +346,61 @@ static void print_help(void)
 }
 
 /* ------------------------------------------------------------------------- *
+ * Title screen.                                                             *
+ * ------------------------------------------------------------------------- */
+static void center_text(int y, const char *s)
+{
+  int x = (COLS - (int) strlen(s)) / 2;
+  if (x < 0) x = 0;
+  mvprintw(y, x, "%s", s);
+}
+
+/* Returns true if the player chose to quit from the title. */
+static bool show_start_screen(void)
+{
+  static const char *ascii_title[] = {
+    " ###   ####  #### ##### ##### ",
+    "#   # #     #       #     #   ",
+    "#####  ###  #       #     #   ",
+    "#   #     # #       #     #   ",
+    "#   # ####   #### ##### ##### ",
+  };
+  static const char *pokemon_title[] = {
+    "#####  ###  #   # ##### #   #  ###  #   # ",
+    "#   # #   # #  #  #     ## ## #   # ##  # ",
+    "#   # #   # ##    ####  # # # #   # # # # ",
+    "##### #   # #  #  #     #   # #   # #  ## ",
+    "#      ###  #   # ##### #   #  ###  #   # ",
+  };
+
+  int cy = (LINES - 17) / 2;
+  if (cy < 0) cy = 0;
+  int ax = (COLS - 30) / 2;
+  if (ax < 0) ax = 0;
+  int px = (COLS - 42) / 2;
+  if (px < 0) px = 0;
+
+  clear();
+  for (int i = 0; i < 5; i++) mvprintw(cy + i, ax, "%s", ascii_title[i]);
+
+  attron(COLOR_PAIR(CP_YELLOW));
+  for (int i = 0; i < 5; i++) mvprintw(cy + 6 + i, px, "%s", pokemon_title[i]);
+  attroff(COLOR_PAIR(CP_YELLOW));
+
+  center_text(cy + 12, "a tiny pocket-monster roguelike");
+  center_text(cy + 13, "walk the tall grass : catch 'em, battle 'em");
+
+  attron(A_BOLD);
+  center_text(cy + 15, "press any key to begin");
+  attroff(A_BOLD);
+  center_text(cy + 16, "(q to quit)");
+
+  refresh();
+  int k = getch();
+  return (k == 'q' || k == 'Q' || k == ERR);
+}
+
+/* ------------------------------------------------------------------------- *
  * Main game loop: a turn queue keyed by accumulated move cost.              *
  * ------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
@@ -383,6 +438,17 @@ int main(int argc, char *argv[])
 
   init_curses();
   compute_layout();
+
+  if (show_start_screen()) {
+    endwin();
+    for (i = 0; i < WORLD_HEIGHT; i++) {
+      for (j = 0; j < WORLD_WIDTH; j++) {
+        free(worldMap[i][j]);
+      }
+    }
+    free(worldMap);
+    return 0;
+  }
 
   /* The starter is the first (and active) party member. */
   starter_pick(&party[0], read_key_blocking);
