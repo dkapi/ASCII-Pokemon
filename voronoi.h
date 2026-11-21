@@ -10,7 +10,12 @@ typedef struct Seed {
   char tile;
 } Seed_t;
 
+/* Biome-fill selector: true = value-noise (world-continuous), false = Voronoi. */
+extern bool terrain_noise;
+
 void generate_voronoi_map(terrain_map_t *map, Gates_t gates);
+
+void fill_noise_map(terrain_map_t *map);
 
 void fill_vorinoi_map(terrain_map_t *map, Seed_t *seeds);
 

@@ -22,7 +22,8 @@ Run the binary from the repository root (world assets are generated at
 runtime, but the working directory should be the repo root).
 
 `-d` / `--debug` prints the hiker/rival Dijkstra cost maps before the title
-screen.
+screen. `-n` / `--noise` uses value-noise terrain (world-continuous biomes)
+instead of the default Voronoi regions.
 
 ## Controls
 

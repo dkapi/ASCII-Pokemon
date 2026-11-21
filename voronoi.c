@@ -3,6 +3,10 @@
 
 #include "voronoi.h"
 #include "tiles.h"
+#include "noise.h"
+
+/* Selected by --noise: value-noise biomes instead of Voronoi regions. */
+bool terrain_noise = false;
 
 /* Squared distance is enough for nearest-seed comparisons and avoids the
  * sqrt() per cell (and the -lm link dependency). */
@@ -15,10 +19,16 @@ static inline int dist_sq(int x, int y, int x2, int y2)
 
 void generate_voronoi_map(terrain_map_t *map, Gates_t gates)
 {
-  Seed_t seeds[SEED_NUM] = { 0 };
   generate_map_border(map);
-  generate_voronoi_seeds(&seeds[0]);
-  fill_vorinoi_map(map, &seeds[0]);
+
+  if (terrain_noise) {
+    fill_noise_map(map);
+  } else {
+    Seed_t seeds[SEED_NUM] = { 0 };
+    generate_voronoi_seeds(&seeds[0]);
+    fill_vorinoi_map(map, &seeds[0]);
+  }
+
   generate_map_gates(map, &gates);
   map->gates = gates;
   generate_map_path(map, gates);
@@ -87,6 +97,37 @@ void fill_vorinoi_map(terrain_map_t *gridMap, Seed_t *seeds)
       } else {
         gridMap->grid[x][y] = seeds[closestSeed].tile;
       }
+    }
+  }
+}
+
+/* ---- value-noise biome fill (--noise) ----
+ * Elevation + moisture, thresholded into terrain bands and seeded by WORLD
+ * coordinates so a lake or forest spans maps without a seam.  The route and
+ * buildings are placed afterward exactly as with the Voronoi fill, so the
+ * connectivity invariants are unchanged. */
+void fill_noise_map(terrain_map_t *m)
+{
+  double ew0 = (double) m->location.x * GRID_WIDTH;
+  double ns0 = (double) m->location.y * GRID_HEIGHT;
+
+  for (int x = 1; x < GRID_HEIGHT - 1; x++) {
+    for (int y = 1; y < GRID_WIDTH - 1; y++) {
+      double ew = ew0 + (double) y;   /* east-west, continuous across maps */
+      double ns = ns0 + (double) x;   /* north-south, continuous across maps */
+
+      double e = fbm2(ew * 0.035, ns * 0.035, 4);              /* elevation */
+      double w = fbm2(ew * 0.085 + 137.0, ns * 0.085, 3);      /* moisture */
+
+      char t;
+      if (e < -0.28)      t = waterTile.ascii;
+      else if (e < -0.14) t = clearingTile.ascii;       /* shore */
+      else if (e < 0.02)  t = (w > 0.0) ? tallGrassTile.ascii : clearingTile.ascii;
+      else if (e < 0.26)  t = (w > -0.10) ? treeTile.ascii : tallGrassTile.ascii;
+      else if (e < 0.44)  t = (w > 0.05) ? treeTile.ascii : clearingTile.ascii;
+      else                t = mountainTile.ascii;
+
+      m->grid[x][y] = t;
     }
   }
 }
