@@ -46,9 +46,10 @@ instead of the default Voronoi regions.
 ## The game
 
 - **World** — 401 × 401 maps, each 80 × 21, centered on `(0,0)`. Terrain comes
-  from Voronoi regions: mountain `%`, tree `^`, tall grass `:`, water `~`,
-  clearing `.`, paths `#`, plus Pokémon Centers `C` and Marts `M`. A path (the
-  "route") connects the map's four border gates so you can walk between maps.
+  from Voronoi regions (or continuous value-noise with `--noise`): mountain `%`,
+  tree `^`, tall grass `:`, water `~`, clearing `.`, sand `=`, snow `*`, paths
+  `#`, plus Pokémon Centers `C` and Marts `M`. A path (the "route") connects the
+  map's four border gates so you can walk between maps.
 
 - **Turns** — every actor is scheduled on a min-heap keyed by accumulated move
   cost (path 10, grass 20, water 7), so time passes fairly and in cost order.
@@ -59,8 +60,9 @@ instead of the default Voronoi regions.
 
 - **Pokémon** — the full Gen 1 + 2 Pokédex (251 species). Pick from six
   starters: Bulbasaur, Charmander, Squirtle, Chikorita, Cyndaquil, Totodile.
-  Stepping into tall grass may trigger a wild encounter; walking into a trainer
-  starts a battle.
+  Wild encounters are **biome-specific** — each terrain spawns its own pool
+  (grass → bugs/grass, desert → ground/fire, snow → ice, clearings → normal) —
+  and walking into a trainer starts a battle.
 
 - **Battles** — damage = attack vs. defense from level, move power, and stats
   with ±15% variance; each pokémon knows `Tackle` plus one signature move.

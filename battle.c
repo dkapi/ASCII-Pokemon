@@ -141,9 +141,10 @@ void starter_pick(pokemon_t *out, int (*getkey)(void))
   }
 }
 
-void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist)
+void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist,
+                    char tile)
 {
-  pokemon_t wild = make_pokemon(rand() % pokemon_num_species,
+  pokemon_t wild = make_pokemon(encounter_species(tile),
                                 wild_level(manhattan_dist));
   msg("A wild %s appeared!", species_name(wild.species));
 

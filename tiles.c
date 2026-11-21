@@ -38,6 +38,18 @@ struct tile_s waterTile = {
   .tile_idx = Water,
 };
 
+struct tile_s sandTile = {
+  .name = "sand",
+  .ascii = '=',
+  .tile_idx = SandTile,
+};
+
+struct tile_s snowTile = {
+  .name = "snow",
+  .ascii = '*',
+  .tile_idx = SnowTile,
+};
+
 struct tile_s pokemonCenter = {
   .name = "center",
   .ascii = 'C',
@@ -59,6 +71,8 @@ const struct tile_s *tiles[TileCount] = {
   [Clearing]     = &clearingTile,
   [Path]         = &pathTile,
   [Water]        = &waterTile,
+  [SandTile]     = &sandTile,
+  [SnowTile]     = &snowTile,
 };
 
 struct tile_s *char_to_tile_s(char terrain)
@@ -69,6 +83,8 @@ struct tile_s *char_to_tile_s(char terrain)
     case '~': return &waterTile;
     case '%': return &mountainTile;
     case '.': return &clearingTile;
+    case '=': return &sandTile;
+    case '*': return &snowTile;
     case 'C': return &pokemonCenter;
     case 'M': return &pokeMart;
     case '#': return &pathTile;

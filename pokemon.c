@@ -84,3 +84,59 @@ int battle_damage(const pokemon_t *atk, const pokemon_t *def, int move_idx)
   dmg = dmg * (85 + rand() % 31) / 100;   /* ±15% variance */
   return dmg < 1 ? 1 : dmg;
 }
+
+/* ------------------------------------------------------------------------- *
+ * Per-biome encounter tables.  Each walkable terrain has its own species pool *
+ * so the world feels regional (mountains -> rock, desert -> ground/fire, ...). *
+ * ------------------------------------------------------------------------- */
+
+static const char *const pool_grass[] = {
+  "Caterpie", "Weedle", "Oddish", "Bellsprout", "Paras", "Venonat",
+  "Rattata", "Pidgey", "Spearow", "Hoothoot", "Sentret", "Ledyba",
+  "Spinarak", "Hoppip", "Sunkern", "Mareep", "Pichu", "Aipom",
+  "Teddiursa", "Stantler", "Smeargle", "Natu",
+};
+
+static const char *const pool_clear[] = {
+  "Pidgey", "Spearow", "Rattata", "Meowth", "Sentret", "Furret",
+  "Hoothoot", "Noctowl", "Doduo", "Tauros", "Miltank", "Snubbull",
+  "Granbull", "Dunsparce", "Girafarig", "Stantler", "Aipom", "Eevee",
+};
+
+static const char *const pool_sand[] = {
+  "Sandshrew", "Sandslash", "Diglett", "Dugtrio", "Geodude", "Cubone",
+  "Marowak", "Growlithe", "Vulpix", "Ponyta", "Ekans", "Phanpy",
+  "Donphan", "Larvitar", "Gligar", "Slugma", "Magcargo", "Houndour",
+};
+
+static const char *const pool_snow[] = {
+  "Seel", "Dewgong", "Shellder", "Cloyster", "Jynx", "Lapras",
+  "Swinub", "Piloswine", "Sneasel", "Delibird", "Smoochum",
+};
+
+static int pick_from(const char *const *pool, int n)
+{
+  return species_index(pool[rand() % n]);
+}
+
+int encounter_species(char tile)
+{
+  switch (tile) {
+    case ':': return pick_from(pool_grass, (int)(sizeof pool_grass / sizeof *pool_grass));
+    case '.': return pick_from(pool_clear, (int)(sizeof pool_clear / sizeof *pool_clear));
+    case '=': return pick_from(pool_sand,  (int)(sizeof pool_sand  / sizeof *pool_sand));
+    case '*': return pick_from(pool_snow,  (int)(sizeof pool_snow  / sizeof *pool_snow));
+    default:  return rand() % pokemon_num_species;
+  }
+}
+
+int encounter_prob(char tile)
+{
+  switch (tile) {
+    case ':': return 10;   /* tall grass */
+    case '=': return 8;    /* sand */
+    case '*': return 8;    /* snow */
+    case '.': return 3;    /* clearing */
+    default:  return 0;
+  }
+}

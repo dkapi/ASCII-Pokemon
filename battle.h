@@ -27,7 +27,8 @@ extern int party_count;
 extern int party_active;
 
 void starter_pick(pokemon_t *out, int (*getkey)(void));
-void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist);
+void wild_encounter(pokemon_t *player, int (*getkey)(void), int manhattan_dist,
+                    char tile);
 void trainer_battle(pokemon_t *player, int (*getkey)(void),
                     struct character_s *npc, int manhattan_dist);
 void shop_mart(int (*getkey)(void));

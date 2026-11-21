@@ -10,6 +10,8 @@ enum tile_e {
   Clearing,
   Path,
   Water,
+  SandTile,
+  SnowTile,
   TileCount,
   PokeMart,
   PokeCenter,
@@ -27,6 +29,8 @@ extern struct tile_s tallGrassTile;
 extern struct tile_s clearingTile;
 extern struct tile_s pathTile;
 extern struct tile_s waterTile;
+extern struct tile_s sandTile;
+extern struct tile_s  snowTile;
 extern struct tile_s pokemonCenter;
 extern struct tile_s pokeMart;
 

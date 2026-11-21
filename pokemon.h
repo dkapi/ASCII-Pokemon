@@ -55,4 +55,9 @@ int species_index(const char *name);
 int wild_level(int manhattan_dist);
 int battle_damage(const pokemon_t *atk, const pokemon_t *def, int move_idx);
 
+/* Encounter table: % chance a step on `tile` triggers a wild encounter. */
+int encounter_prob(char tile);
+/* A random species appropriate to `tile` (fallback: any species). */
+int encounter_species(char tile);
+
 #endif /* POKEMON_H */

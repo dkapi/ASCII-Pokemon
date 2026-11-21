@@ -84,6 +84,9 @@ uint32_t pc_cost(struct tile_s tile)
       return 10;
     case TallGrass:
       return 20;
+    case SandTile:
+    case SnowTile:
+      return 25;
     default:
       return INT32_MAX;
   }
@@ -99,6 +102,8 @@ uint32_t hiker_cost(struct tile_s tile)
     case MountainTile: return 15;
     case TreeTile:     return 15;
     case TallGrass:    return 15;
+    case SandTile:     return 15;
+    case SnowTile:     return 15;
     default:
       return INT32_MAX;
   }
@@ -112,6 +117,8 @@ uint32_t rival_cost(struct tile_s tile)
     case PokeCenter: return 50;
     case PokeMart:   return 50;
     case TallGrass:  return 20;
+    case SandTile:   return 20;
+    case SnowTile:   return 20;
     default:
       return INT32_MAX;
   }

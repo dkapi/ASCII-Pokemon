@@ -59,6 +59,8 @@ static int tile_pair(char c)
     case '^': return CP_GREEN;
     case ':': return CP_GREEN;
     case '#': return CP_BROWN;
+    case '=': return CP_YELLOW;   /* sand */
+    case '*': return CP_WHITE;    /* snow */
     case 'C': return CP_RED;
     case 'M': return CP_LBLUE;
     default:  return CP_WHITE;
@@ -173,29 +175,30 @@ static void draw_party_panel(int y, int x, int w)
 static void draw_legend_panel(int y, int x, int w)
 {
   struct leg { char g; const char *label; };
-  static const struct leg terrain[] = {
+  static const struct leg left[] = {
     { '%', "mountain" }, { '^', "tree" }, { ':', "grass" },
     { '~', "water" }, { '#', "path" }, { '.', "clear" },
-    { 'M', "mart" }, { 'C', "center" }, { '@', "you" },
+    { '=', "sand" }, { '*', "snow" }, { '@', "you" },
   };
-  static const struct leg npcs[] = {
+  static const struct leg right[] = {
+    { 'M', "mart" }, { 'C', "center" },
     { 'h', "hiker" }, { 'r', "rival" }, { 'p', "pacer" },
     { 's', "sentry" }, { 'w', "wanderer" }, { 'e', "explorer" },
     { 'm', "swimmer" },
   };
-  int nter = (int)(sizeof terrain / sizeof terrain[0]);
-  int nnpc = (int)(sizeof npcs / sizeof npcs[0]);
+  int nl = (int)(sizeof left / sizeof left[0]);
+  int nr = (int)(sizeof right / sizeof right[0]);
 
-  draw_box(y, x, nter + 3, w);   /* header + 9 rows + 2 borders */
+  draw_box(y, x, nl + 3, w);   /* header + 9 rows + 2 borders */
   mvprintw(y + 1, x + 2, "LEGEND");
 
-  for (int i = 0; i < nter; i++) {
-    colored_ch(y + 2 + i, x + 2, terrain[i].g);
-    mvprintw(y + 2 + i, x + 4, "%-10s", terrain[i].label);
+  for (int i = 0; i < nl; i++) {
+    colored_ch(y + 2 + i, x + 2, left[i].g);
+    mvprintw(y + 2 + i, x + 4, "%-10s", left[i].label);
   }
-  for (int i = 0; i < nnpc; i++) {
-    colored_ch(y + 2 + i, x + 20, npcs[i].g);
-    mvprintw(y + 2 + i, x + 22, "%-9s", npcs[i].label);
+  for (int i = 0; i < nr; i++) {
+    colored_ch(y + 2 + i, x + 20, right[i].g);
+    mvprintw(y + 2 + i, x + 22, "%-9s", right[i].label);
   }
 }
 
@@ -567,10 +570,12 @@ int main(int argc, char *argv[])
           msg_good("Nurse Joy healed your party!");
         } else if (t == pokeMart.ascii) {
           shop_mart(read_key_blocking);
-        } else if (t == tallGrassTile.ascii &&
-                   (rand() % 100) < ENCOUNTER_PROB) {
-          int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
-          wild_encounter(&party[party_active], read_key_blocking, md);
+        } else {
+          int prob = encounter_prob(t);
+          if (prob > 0 && (rand() % 100) < prob) {
+            int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
+            wild_encounter(&party[party_active], read_key_blocking, md, t);
+          }
         }
       }
     }

@@ -61,7 +61,8 @@ void generate_voronoi_seeds(Seed_t *seeds)
 {
   /* Biome tiles that can seed a region (everything except Path). */
   static const enum tile_e biomes[] = {
-    TreeTile, MountainTile, TallGrass, Clearing, Water,
+    TreeTile, TreeTile, MountainTile, MountainTile, TallGrass, TallGrass,
+    Clearing, Clearing, Water, Water, SandTile, SnowTile,
   };
   const int num_biomes = (int) (sizeof(biomes) / sizeof(biomes[0]));
 
@@ -124,7 +125,8 @@ void fill_noise_map(terrain_map_t *m)
       else if (e < -0.14) t = clearingTile.ascii;       /* shore */
       else if (e < 0.02)  t = (w > 0.0) ? tallGrassTile.ascii : clearingTile.ascii;
       else if (e < 0.26)  t = (w > -0.10) ? treeTile.ascii : tallGrassTile.ascii;
-      else if (e < 0.44)  t = (w > 0.05) ? treeTile.ascii : clearingTile.ascii;
+      else if (e < 0.40)  t = (w > 0.15) ? treeTile.ascii : sandTile.ascii;  /* dry highland -> desert */
+      else if (e < 0.55)  t = snowTile.ascii;           /* cold high band */
       else                t = mountainTile.ascii;
 
       m->grid[x][y] = t;
