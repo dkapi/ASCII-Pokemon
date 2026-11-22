@@ -31,4 +31,16 @@ static inline int hp_color(int cur, int max)
   return CP_RED;
 }
 
+/* Render a 10-segment EXP bar ("[====....]") into out (>= 13 bytes). */
+static inline void exp_bar(char out[13], int exp, int exp_to_next)
+{
+  int filled = (exp_to_next > 0) ? (exp * 10) / exp_to_next : 0;
+  if (filled < 0)  filled = 0;
+  if (filled > 10) filled = 10;
+  out[0] = '[';
+  for (int i = 0; i < 10; i++) out[1 + i] = (i < filled) ? '=' : '.';
+  out[11] = ']';
+  out[12] = '\0';
+}
+
 #endif /* UI_H */

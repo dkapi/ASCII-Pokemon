@@ -19,6 +19,9 @@ add_executable(worldgen
   msg.c
   noise.c
   cave.c
+  types.c
+  sprites.c
+  building.c
 )
 
 target_compile_options(worldgen PRIVATE -Wall -Wextra)

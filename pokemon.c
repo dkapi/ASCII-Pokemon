@@ -5,18 +5,32 @@
 
 /* Move list — indexed by the MOVE_* enum in pokemon.h. */
 const move_t pokemon_moves[] = {
-  [MOVE_TACKLE]        = { "Tackle",        40 },
-  [MOVE_QUICK_ATTACK]  = { "Quick Attack",  40 },
-  [MOVE_EMBER]         = { "Ember",         40 },
-  [MOVE_WATER_GUN]     = { "Water Gun",     40 },
-  [MOVE_VINE_WHIP]     = { "Vine Whip",     45 },
-  [MOVE_THUNDER_SHOCK] = { "Thunder Shock", 40 },
-  [MOVE_GUST]          = { "Gust",          40 },
-  [MOVE_ROCK_THROW]    = { "Rock Throw",    50 },
-  [MOVE_BITE]          = { "Bite",          60 },
-  [MOVE_HYPER_BEAM]    = { "Hyper Beam",   150 },
+  [MOVE_TACKLE]        = { "Tackle",        40, TYPE_NORMAL },
+  [MOVE_QUICK_ATTACK]  = { "Quick Attack",  40, TYPE_NORMAL },
+  [MOVE_EMBER]         = { "Ember",         40, TYPE_FIRE },
+  [MOVE_WATER_GUN]     = { "Water Gun",     40, TYPE_WATER },
+  [MOVE_VINE_WHIP]     = { "Vine Whip",     45, TYPE_GRASS },
+  [MOVE_THUNDER_SHOCK] = { "Thunder Shock", 40, TYPE_ELECTRIC },
+  [MOVE_GUST]          = { "Gust",          40, TYPE_FLYING },
+  [MOVE_ROCK_THROW]    = { "Rock Throw",    50, TYPE_ROCK },
+  [MOVE_BITE]          = { "Bite",          60, TYPE_DARK },
+  [MOVE_HYPER_BEAM]    = { "Hyper Beam",   150, TYPE_NORMAL },
 };
 const int pokemon_num_moves = NUM_MOVES;
+
+/* Recompute a pokemon's stats from its base stats at its current level.
+ * Uses a fixed IV of 8 so level-ups are deterministic (no stat re-roll). */
+static void compute_stats(pokemon_t *p)
+{
+  const species_t *s = &pokemon_species[p->species];
+  int lvl = p->level;
+  p->hp    = (s->base_hp    + 8) * 2 * lvl / 100 + lvl + 10;
+  p->atk   = (s->base_atk   + 8) * 2 * lvl / 100 + 5;
+  p->def   = (s->base_def   + 8) * 2 * lvl / 100 + 5;
+  p->spatk = (s->base_spatk + 8) * 2 * lvl / 100 + 5;
+  p->spdef = (s->base_spdef + 8) * 2 * lvl / 100 + 5;
+  p->speed = (s->base_speed + 8) * 2 * lvl / 100 + 5;
+}
 
 pokemon_t make_pokemon(int species, int level)
 {
@@ -28,17 +42,53 @@ pokemon_t make_pokemon(int species, int level)
 
   p.species = species;
   p.level = level;
-  p.hp    = (s->base_hp    + (rand() & 0xf)) * 2 * level / 100 + level + 10;
-  p.atk   = (s->base_atk   + (rand() & 0xf)) * 2 * level / 100 + 5;
-  p.def   = (s->base_def   + (rand() & 0xf)) * 2 * level / 100 + 5;
-  p.spatk = (s->base_spatk + (rand() & 0xf)) * 2 * level / 100 + 5;
-  p.spdef = (s->base_spdef + (rand() & 0xf)) * 2 * level / 100 + 5;
-  p.speed = (s->base_speed + (rand() & 0xf)) * 2 * level / 100 + 5;
+  compute_stats(&p);
   p.cur_hp = p.hp;
+  p.exp = 0;
+  p.exp_to_next = exp_to_next_level(level);
   p.move0 = MOVE_TACKLE;
   p.move1 = s->sig_move;
 
   return p;
+}
+
+int exp_to_next_level(int level)
+{
+  return level * level * level;   /* level^3 exp to advance */
+}
+
+/* Level up: recompute stats, keep the HP gained, refresh the exp target. */
+static void level_up(pokemon_t *p)
+{
+  int old_hp = p->hp;
+  p->level++;
+  compute_stats(p);
+  p->cur_hp += p->hp - old_hp;
+  if (p->cur_hp > p->hp) p->cur_hp = p->hp;
+  p->exp_to_next = exp_to_next_level(p->level);
+}
+
+int gain_exp(pokemon_t *p, int amount)
+{
+  int levels = 0;
+  p->exp += amount;
+  while (p->level < 100 && p->exp >= p->exp_to_next) {
+    p->exp -= p->exp_to_next;
+    level_up(p);
+    levels++;
+
+    /* Evolution: change species and adopt the new form's signature move. */
+    const species_t *s = &pokemon_species[p->species];
+    if (s->evolves_to >= 0 && p->level >= s->evolve_level) {
+      int old_hp = p->hp;
+      p->species = s->evolves_to;
+      compute_stats(p);
+      p->cur_hp += p->hp - old_hp;
+      if (p->cur_hp > p->hp) p->cur_hp = p->hp;
+      p->move1 = pokemon_species[p->species].sig_move;
+    }
+  }
+  return levels;
 }
 
 const char *species_name(int idx)
@@ -72,7 +122,20 @@ int wild_level(int manhattan_dist)
   return lvl;
 }
 
-/* Simplified damage: physical attack stat vs. physical defense. */
+/* Type-effectiveness multiplier of a move against a defender's type(s). */
+double move_effectiveness(int move_idx, int def_species)
+{
+  const move_t *m = &pokemon_moves[move_idx];
+  const species_t *ds = &pokemon_species[def_species];
+  double eff = type_effectiveness(m->type, ds->type1);
+  if (ds->type2 != TYPE_NONE) {
+    eff *= type_effectiveness(m->type, ds->type2);
+  }
+  return eff;
+}
+
+/* Simplified damage: physical attack stat vs. physical defense, scaled by
+ * type effectiveness (the move's type vs. the defender's type(s)). */
 int battle_damage(const pokemon_t *atk, const pokemon_t *def, int move_idx)
 {
   const move_t *m = &pokemon_moves[move_idx];
@@ -82,6 +145,11 @@ int battle_damage(const pokemon_t *atk, const pokemon_t *def, int move_idx)
 
   dmg = ((2 * atk->level / 5 + 2) * m->power * atk->atk / def->def) / 50 + 2;
   dmg = dmg * (85 + rand() % 31) / 100;   /* ±15% variance */
+
+  double eff = move_effectiveness(move_idx, def->species);
+  if (eff <= 0.0) return 0;   /* immune */
+  dmg = (int)(dmg * eff);
+
   return dmg < 1 ? 1 : dmg;
 }
 

@@ -15,6 +15,7 @@
 #include "msg.h"
 #include "ui.h"
 #include "cave.h"
+#include "building.h"
 
 /* Cave-layer state: whether the player is underground, plus the overworld
  * spot they descended from, so ascending always returns home. */
@@ -22,6 +23,13 @@ static bool in_cave = false;
 static int  vision_radius = 0;             /* 0 = full light (overworld) */
 static Location_t cave_home;               /* overworld map coord descended from */
 static Location_t cave_home_tile;          /* the 'O' tile descended through */
+
+/* Building-interior state: which building we're inside, and the overworld
+ * tile we entered from, so leaving returns us to the door. */
+static bool in_building = false;
+static int  building_type = BUILDING_CENTER;
+static Location_t building_home;           /* the 'C'/'M' tile we entered from */
+static terrain_map_t building_map;         /* the fixed interior, reused */
 
 /* ------------------------------------------------------------------------- *
  * ncurses initialization (color pairs are defined in ui.h).                 *
@@ -75,6 +83,9 @@ static int tile_pair(char c)
     case '>': return CP_WHITE;    /* cave exit stair */
     case '$': return CP_YELLOW;   /* loot: money */
     case '!': return CP_CYAN;     /* loot: item */
+    case 'N': return CP_RED;      /* Nurse Joy */
+    case 'S': return CP_LBLUE;    /* shop clerk */
+    case 'P': return CP_CYAN;     /* PC */
     default:  return CP_WHITE;
   }
 }
@@ -233,9 +244,9 @@ static void draw_frame(terrain_map_t *g, Location_t loc)
   /* Full-width reverse-video status bar. */
   char status[160];
   snprintf(status, sizeof status,
-           " loc (%d,%d)  $%d  %d potions  %d balls  party %d/%d  [h help  m log  p party  q quit] ",
+           " loc (%d,%d)  $%d  %d potions  %d balls  %d repels  party %d/%d  [h help  m log  p party  r repel  q quit] ",
            loc.x - 200, loc.y - 200, bag.money, bag.potions, bag.pokeballs,
-           party_count, MAX_PARTY);
+           bag.repels, party_count, MAX_PARTY);
 
   attron(A_REVERSE);
   mvprintw(GRID_HEIGHT, 0, "%s", status);
@@ -316,6 +327,52 @@ static terrain_map_t *load_cave_map(terrain_map_t *(*worldMapCave)[WORLD_WIDTH],
   return worldMapCave[loc.x][loc.y];
 }
 
+/* Relocate the PC to the map's Pokemon Center (a free walkable tile beside the
+ * 2x2 'C' block) and heal the whole party.  Used after a blackout. */
+static void send_to_center(terrain_map_t *map)
+{
+  int cx = -1, cy = -1;
+  for (int x = 1; x < GRID_HEIGHT - 1 && cx < 0; x++)
+    for (int y = 1; y < GRID_WIDTH - 1 && cy < 0; y++)
+      if (map->grid[x][y] == pokemonCenter.ascii) { cx = x; cy = y; }
+
+  if (cx >= 0) {
+    for (int x = cx - 1; x <= cx + 2; x++) {
+      for (int y = cy - 1; y <= cy + 2; y++) {
+        if (x < 1 || x >= GRID_HEIGHT - 1 || y < 1 || y >= GRID_WIDTH - 1) continue;
+        if (x >= cx && x <= cx + 1 && y >= cy && y <= cy + 1) continue;  /* the block */
+        if (map->cmap[x][y]) continue;
+        if (pc.cost(*char_to_tile_s(map->grid[x][y])) == INT32_MAX) continue;
+        map->cmap[pc.location.x][pc.location.y] = NULL;
+        pc.location.x = x;
+        pc.location.y = y;
+        map->cmap[x][y] = &pc;
+        break;
+      }
+    }
+  }
+
+  for (int i = 0; i < party_count; i++) {
+    party[i].cur_hp = party[i].hp;
+  }
+  msg_good("You were rushed to the Pokemon Center!");
+}
+
+/* Enter a building: remember the door tile, generate the interior, and place
+ * the PC just inside the door.  Returns the interior map. */
+static terrain_map_t *enter_building(int type)
+{
+  building_home = pc.location;
+  building_type = type;
+  in_building = true;
+  generate_building_interior(&building_map, type);
+  clear_characters(&building_map);
+  pc.location.x = GRID_HEIGHT - 3;
+  pc.location.y = GRID_WIDTH / 2;
+  building_map.cmap[pc.location.x][pc.location.y] = &pc;
+  return &building_map;
+}
+
 static void rebuild_turn_queue(heap_t *turn)
 {
   heap_delete(turn);
@@ -324,7 +381,7 @@ static void rebuild_turn_queue(heap_t *turn)
   pc.next_turn = 0;
   heap_insert(turn, &pc);
 
-  if (in_cave) return;   /* caves have no trainers; the PC acts alone */
+  if (in_cave || in_building) return;   /* no trainers underground or indoors */
 
   for (int i = 0; i < NUM_NPCS; i++) {
     npc_list[i]->next_turn = 0;
@@ -397,6 +454,7 @@ static void print_help(void)
   printw("  help          h or ?\n");
   printw("  message log   m\n");
   printw("  party         p\n");
+  printw("  repel         r  (use a Repel: no wilds for %d steps)\n", REPEL_STEPS);
   printw("  quit          q  (or Ctrl-C)\n\n");
   printw("  time passes by move cost: path=10 grass=20 water=7\n");
   printw("  The world is 401 x 401 maps; the center is (0,0).\n\n");
@@ -406,7 +464,9 @@ static void print_help(void)
   printw("        s sentry  e explorer  m swimmer\n");
   printw("  walk in tall grass ':' to find wild pokemon\n");
   printw("  walk into a trainer to battle\n");
-  printw("  step on 'C' to heal, 'M' to visit the mart\n");
+  printw("  step on 'C' or 'M' to go inside the building\n");
+  printw("    Center: 'N' heals, 'P' opens the PC box, '#' leaves\n");
+  printw("    Mart:   'S' shops, '#' leaves\n");
   printw("  'O' is a cave entrance: descend into a dark cavern\n");
   printw("    (limited torch light, stronger cave-only wilds)\n");
   printw("    pick up '$' money and '!' items, find '>' to climb out\n\n");
@@ -583,6 +643,18 @@ int main(int argc, char *argv[])
         party_view(read_key_blocking);
         break;   /* viewing the party costs no turn */
 
+      case 'r':
+      case 'R':
+        if (bag.repels > 0) {
+          bag.repels--;
+          repel_steps = REPEL_STEPS;
+          msg_good("Used a Repel! Wild pokemon will stay away for %d steps.",
+                   REPEL_STEPS);
+        } else {
+          msg_bad("No Repels left!");
+        }
+        break;   /* using a repel costs no turn */
+
       case 'f': {
         int x = read_int_prompt("fly to x [-200, 200]: ");
         int y = read_int_prompt("fly to y [-200, 200]: ");
@@ -625,7 +697,9 @@ int main(int argc, char *argv[])
         struct character_s *foe = currGrid->cmap[tx][ty];
         if (foe) {
           int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
-          trainer_battle(&party[party_active], read_key_blocking, foe, md);
+          if (trainer_battle(read_key_blocking, foe, md)) {
+            send_to_center(currGrid);
+          }
         }
         pc.next_turn += REST_COST;
       } else if (res >= PC_MOVE_EXIT_UP) {
@@ -646,7 +720,30 @@ int main(int argc, char *argv[])
         char t = currGrid->grid[pc.location.x][pc.location.y];
         int tx = pc.location.x, ty = pc.location.y;
 
-        if (in_cave) {
+        if (repel_steps > 0) {
+          repel_steps--;
+          if (repel_steps == 0) {
+            msg("The Repel wore off!");
+          }
+        }
+
+        if (in_building) {
+          if (t == BUILDING_DOOR) {
+            /* leave the building, back to the overworld door */
+            in_building = false;
+            currGrid = load_map(worldMap, currLoc, (Gates_t) { 0 });
+            gates = currGrid->gates;
+            setup_map(currGrid, building_home);
+            transitioned = true;
+          } else if (t == BUILDING_NURSE) {
+            for (i = 0; i < party_count; i++) party[i].cur_hp = party[i].hp;
+            msg_good("Nurse Joy healed your party!");
+          } else if (t == BUILDING_PC) {
+            pc_box_view(read_key_blocking);
+          } else if (t == BUILDING_CLERK) {
+            shop_mart(read_key_blocking);
+          }
+        } else if (in_cave) {
           if (t == CAVE_EXIT) {
             /* climb out, back to the overworld we descended from */
             in_cave = false;
@@ -665,18 +762,27 @@ int main(int argc, char *argv[])
             if (rand() & 1) { bag.potions += 2; msg_good("You found 2 potions!"); }
             else { bag.pokeballs += 2; msg_good("You found 2 pokeballs!"); }
             currGrid->grid[tx][ty] = CAVE_FLOOR;
-          } else if ((rand() % 100) < CAVE_ENCOUNTER_PROB) {
+          } else if (repel_steps == 0 && (rand() % 100) < CAVE_ENCOUNTER_PROB) {
             int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
-            wild_encounter_cave(&party[party_active], read_key_blocking, md);
+            if (wild_encounter_cave(read_key_blocking, md)) {
+              /* blacked out underground: climb out, then go to the Center */
+              in_cave = false;
+              vision_radius = 0;
+              currLoc = cave_home;
+              currGrid = load_map(worldMap, currLoc, (Gates_t) { 0 });
+              gates = currGrid->gates;
+              setup_map(currGrid, cave_home_tile);
+              transitioned = true;
+              send_to_center(currGrid);
+            }
           }
         } else {
           if (t == pokemonCenter.ascii) {
-            for (i = 0; i < party_count; i++) {
-              party[i].cur_hp = party[i].hp;   /* the center heals the whole party */
-            }
-            msg_good("Nurse Joy healed your party!");
+            currGrid = enter_building(BUILDING_CENTER);
+            transitioned = true;
           } else if (t == pokeMart.ascii) {
-            shop_mart(read_key_blocking);
+            currGrid = enter_building(BUILDING_MART);
+            transitioned = true;
           } else if (t == caveEntranceTile.ascii) {
             /* descend into the cave under this map */
             cave_home = currLoc;
@@ -689,9 +795,11 @@ int main(int argc, char *argv[])
             transitioned = true;
           } else {
             int prob = encounter_prob(t);
-            if (prob > 0 && (rand() % 100) < prob) {
+            if (prob > 0 && repel_steps == 0 && (rand() % 100) < prob) {
               int md = abs(currLoc.x - 200) + abs(currLoc.y - 200);
-              wild_encounter(&party[party_active], read_key_blocking, md, t);
+              if (wild_encounter(read_key_blocking, md, t)) {
+                send_to_center(currGrid);
+              }
             }
           }
         }
@@ -706,7 +814,7 @@ int main(int argc, char *argv[])
     /* Track the PC's live position so the hiker and rival actually chase
      * you, not the spot where you first spawned.  (Skipped in caves, which
      * have no trainers to chase.) */
-    if (!in_cave) {
+    if (!in_cave && !in_building) {
       compute_dist_maps(currGrid, &pc.location);
     }
 

@@ -94,6 +94,9 @@ struct tile_s *char_to_tile_s(char terrain)
     case 'C': return &pokemonCenter;
     case 'M': return &pokeMart;
     case 'O': return &caveEntranceTile;
+    case 'N': return &clearingTile;   /* building interior: Nurse Joy */
+    case 'S': return &clearingTile;   /* building interior: shop clerk */
+    case 'P': return &clearingTile;   /* building interior: PC */
     case '#': return &pathTile;
     default:
       fprintf(stderr, "unknown terrain '%c' in char_to_tile_s\n", terrain);

@@ -1,6 +1,8 @@
 #ifndef POKEMON_H
 #define POKEMON_H
 
+#include "types.h"
+
 /* Generation 1-2 Pokédex (251 species).  The species table lives in
  * pokedex_gen12.c, auto-generated from the veekun pokedex CSVs. */
 
@@ -25,12 +27,16 @@ enum {
 typedef struct species {
   char name[16];
   int base_hp, base_atk, base_def, base_spatk, base_spdef, base_speed;
-  int sig_move;      /* species-flavoured move (a MOVE_* index) */
+  int type1, type2;      /* TYPE_* indices; type2 = TYPE_NONE if single-typed */
+  int evolves_to;        /* species index of the evolved form, or -1 */
+  int evolve_level;      /* level at which it evolves (0 if not level-based) */
+  int sig_move;          /* species-flavoured move (a MOVE_* index) */
 } species_t;
 
 typedef struct move {
   char name[16];
   int power;         /* 0 = non-damaging */
+  int type;          /* TYPE_* of the move */
 } move_t;
 
 typedef struct pokemon {
@@ -38,6 +44,8 @@ typedef struct pokemon {
   int level;
   int hp, atk, def, spatk, spdef, speed;
   int cur_hp;
+  int exp;           /* current experience */
+  int exp_to_next;   /* exp needed to reach the next level */
   int move0;         /* always Tackle */
   int move1;         /* the species' signature move */
 } pokemon_t;
@@ -54,6 +62,13 @@ const char *move_name(int idx);
 int species_index(const char *name);
 int wild_level(int manhattan_dist);
 int battle_damage(const pokemon_t *atk, const pokemon_t *def, int move_idx);
+/* Type-effectiveness multiplier of `move_idx` against `def_species`. */
+double move_effectiveness(int move_idx, int def_species);
+
+/* EXP needed to advance from `level` to `level + 1`. */
+int exp_to_next_level(int level);
+/* Add exp, leveling up (and evolving) as needed.  Returns levels gained. */
+int gain_exp(pokemon_t *p, int amount);
 
 /* Encounter table: % chance a step on `tile` triggers a wild encounter. */
 int encounter_prob(char tile);

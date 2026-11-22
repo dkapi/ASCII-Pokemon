@@ -1,9 +1,8 @@
 # ASCII-Pokémon
 
-A pokémon-flavoured ASCII roguelike in C, grown out of a poke327-style course
-project. Explore a huge procedurally-generated world, catch wild pokémon in
-the tall grass, battle the trainers in your way, and build a team of up to
-six.
+A pokémon-flavoured ASCII roguelike in C. Explore a huge procedurally-generated
+world, catch wild pokémon in the tall grass, battle the trainers in your way,
+and build a team of up to six.
 
 Rendered with **ncurses** — colored map, message log, party panel, and a
 title screen.
@@ -35,12 +34,13 @@ Voronoi-region fill.
 | `h` or `?` | help / controls |
 | `m` | message log (scrollable history) |
 | `p` | party — view and switch your active pokémon |
+| `r` | use a Repel (no wild encounters for 100 steps) |
 | `q` | quit |
 
 **In battle:** `1` / `2` use a move · `p` potion · `b` poké ball (wild only) ·
 `r` run.
 
-**In the mart:** `1` potion · `2` poké ball · `q` leave.
+**In the mart:** `1` potion · `2` poké ball · `3` repel · `q` leave.
 
 **Starter:** `1`–`6`.
 
@@ -62,6 +62,10 @@ Voronoi-region fill.
   overworld), and you find `>` to climb back out at the entrance you came in
   through.
 
+- **Buildings** — step on a Center `C` or Mart `M` to go inside. The Center has
+  Nurse Joy `N` (heal) and a PC `P` (box); the Mart has a clerk `S` (shop). Step
+  on the door `#` to leave.
+
 - **Turns** — every actor is scheduled on a min-heap keyed by accumulated move
   cost (path 10, grass 20, water 7), so time passes fairly and in cost order.
 
@@ -76,24 +80,31 @@ Voronoi-region fill.
   and walking into a trainer starts a battle.
 
 - **Battles** — damage = attack vs. defense from level, move power, and stats
-  with ±15% variance; each pokémon knows `Tackle` plus one signature move.
-  Weaken wilds and throw Poké Balls; potions heal mid-fight. Trainers are named
-  by class ("a Hiker blocks your path!"), and a beaten trainer stands down and
-  no longer blocks the route.
+  with ±15% variance, scaled by **type effectiveness** (17 Gen 1–2 types, 2×/½×/0×
+  with "super effective!" / "not very effective…" feedback). Each pokémon knows
+  `Tackle` plus one signature move. Weaken wilds and throw Poké Balls; potions
+  heal mid-fight. Trainers field **2–3 pokémon** (scaling with distance) and
+  send out the next when one faints; you can **switch** your active mid-battle
+  (`s`). A beaten trainer stands down and no longer blocks the route.
 
-- **Party & money** — caught pokémon join your party (up to six) and you can
-  switch who leads. You start with $3000, three potions, and five balls; win
-  trainer battles for cash, buy potions ($200) and balls ($100) at the Mart,
-  and heal the whole party at a Center.
+- **Growth** — winning or catching awards **EXP**; pokémon level up (stats
+  recomputed) and **evolve** at the right level (starters, Magikarp→Gyarados,
+  …). The battle screen shows an ASCII sprite per type, type badges, and HP/EXP
+  bars.
+
+- **Party & money** — caught pokémon join your party (up to six); overflow goes
+  to the **PC box** (100 slots), managed at a Center's PC. You start with $3000,
+  three potions, and five balls; win trainer battles for cash, buy potions
+  ($200), balls ($100), and Repels ($350) at the Mart, and heal the whole party
+  at a Center. Use a Repel (`r`) to keep wild pokémon away for 100 steps.
 
 ## Not yet
 
-- No XP, level-ups, or evolution.
-- No type effectiveness (types are in the data, just not used in damage).
 - No saving/loading.
-- One pokémon per trainer; your party has a leader but no multi-switch mid-battle.
+- Trade/item evolutions (only level-up + happiness evolutions are wired).
+- No special/physical split (all moves use the physical formula).
 
 ## Credits
 
-Built on the poke327 course skeleton (Dijkstra map + Fibonacci-heap turn
-engine). The Gen 1–2 Pokédex is generated from the veekun `pokedex` CSVs.
+Built on a Dijkstra-map + Fibonacci-heap turn engine. The Gen 1–2 Pokédex is
+generated from the veekun `pokedex` CSVs.
