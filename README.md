@@ -22,8 +22,9 @@ Run the binary from the repository root (world assets are generated at
 runtime, but the working directory should be the repo root).
 
 `-d` / `--debug` prints the hiker/rival Dijkstra cost maps before the title
-screen. `-n` / `--noise` uses value-noise terrain (world-continuous biomes)
-instead of the default Voronoi regions.
+screen. Terrain is domain-warped value-noise by default (flowing ridges and
+rivers); pass `--no-warp` for plain noise, or `--voronoi` for the old
+Voronoi-region fill.
 
 ## Controls
 
@@ -46,7 +47,8 @@ instead of the default Voronoi regions.
 ## The game
 
 - **World** — 401 × 401 maps, each 80 × 21, centered on `(0,0)`. Terrain comes
-  from Voronoi regions (or continuous value-noise with `--noise`): mountain `%`,
+  from domain-warped value-noise (elevation + moisture; `--no-warp` for plain
+  noise, `--voronoi` for the old Voronoi fill): mountain `%`,
   tree `^`, tall grass `:`, water `~`, clearing `.`, sand `=`, snow `*`, paths
   `#`, plus Pokémon Centers `C`, Marts `M`, and cave entrances `O`. A path (the
   "route") connects the map's four border gates so you can walk between maps.

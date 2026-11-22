@@ -5,8 +5,11 @@
 #include "tiles.h"
 #include "noise.h"
 
-/* Selected by --noise: value-noise biomes instead of Voronoi regions. */
-bool terrain_noise = false;
+/* Default terrain is value-noise biomes; --voronoi opts back into Voronoi. */
+bool terrain_noise = true;
+
+/* Domain-warp the elevation (default); --no-warp disables it. */
+bool terrain_warp = true;
 
 /* Squared distance is enough for nearest-seed comparisons and avoids the
  * sqrt() per cell (and the -lm link dependency). */
@@ -118,16 +121,27 @@ void fill_noise_map(terrain_map_t *m)
       double ew = ew0 + (double) y;   /* east-west, continuous across maps */
       double ns = ns0 + (double) x;   /* north-south, continuous across maps */
 
-      double e = fbm2(ew * 0.035, ns * 0.035, 4);              /* elevation */
-      double w = fbm2(ew * 0.085 + 137.0, ns * 0.085, 3);      /* moisture */
+      double e, w;
+      if (terrain_warp) {
+        /* Domain-warp the elevation: displace the sample point by a
+         * lower-frequency noise field so mountain ranges and rivers flow
+         * instead of sitting in round blobs. */
+        double qx = fbm2(ew * 0.02 + 3.1, ns * 0.02, 3);
+        double qy = fbm2(ew * 0.02, ns * 0.02 + 7.7, 3);
+        e = fbm2(ew * 0.035 + 3.0 * qx, ns * 0.035 + 3.0 * qy, 4);
+        w = fbm2(ew * 0.085 + 137.0, ns * 0.085, 3);
+      } else {
+        e = fbm2(ew * 0.035, ns * 0.035, 4);              /* elevation */
+        w = fbm2(ew * 0.085 + 137.0, ns * 0.085, 3);      /* moisture */
+      }
 
       char t;
       if (e < -0.28)      t = waterTile.ascii;
       else if (e < -0.14) t = clearingTile.ascii;       /* shore */
-      else if (e < 0.02)  t = (w > 0.0) ? tallGrassTile.ascii : clearingTile.ascii;
+      else if (e < 0.02)  t = (w > -0.15) ? tallGrassTile.ascii : sandTile.ascii;  /* lowland: grass, desert if very dry */
       else if (e < 0.26)  t = (w > -0.10) ? treeTile.ascii : tallGrassTile.ascii;
-      else if (e < 0.40)  t = (w > 0.15) ? treeTile.ascii : sandTile.ascii;  /* dry highland -> desert */
-      else if (e < 0.55)  t = snowTile.ascii;           /* cold high band */
+      else if (e < 0.40)  t = (w > -0.10) ? treeTile.ascii : clearingTile.ascii; /* highland */
+      else if (e < 0.55)  t = snowTile.ascii;           /* cold */
       else                t = mountainTile.ascii;
 
       m->grid[x][y] = t;

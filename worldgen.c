@@ -481,8 +481,10 @@ int main(int argc, char *argv[])
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--debug")) {
       debug = true;
-    } else if (!strcmp(argv[i], "-n") || !strcmp(argv[i], "--noise")) {
-      terrain_noise = true;
+    } else if (!strcmp(argv[i], "--voronoi")) {
+      terrain_noise = false;
+    } else if (!strcmp(argv[i], "--no-warp")) {
+      terrain_warp = false;
     }
   }
 

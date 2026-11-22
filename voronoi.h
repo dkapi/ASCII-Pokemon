@@ -13,6 +13,9 @@ typedef struct Seed {
 /* Biome-fill selector: true = value-noise (world-continuous), false = Voronoi. */
 extern bool terrain_noise;
 
+/* Domain-warp the noise elevation (--warp). */
+extern bool terrain_warp;
+
 void generate_voronoi_map(terrain_map_t *map, Gates_t gates);
 
 void fill_noise_map(terrain_map_t *map);
