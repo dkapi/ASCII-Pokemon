@@ -169,9 +169,14 @@ void place_pc(terrain_map_t *map, Location_t entry)
   int attempts = 0;
 
   if (entry.x || entry.y) {
-    /* Entering through a connecting door: spawn on it.  The gate tile is
-     * always an unblocked path tile on the side we came from. */
+    /* Entering through a connecting door: spawn one step inside the map, not
+     * on the border gate itself, so the player can walk back out through the
+     * door they just came in (stepping onto the gate re-triggers the exit). */
     l = entry;
+    if (l.x == 0) l.x = 1;
+    else if (l.x == GRID_HEIGHT - 1) l.x = GRID_HEIGHT - 2;
+    else if (l.y == 0) l.y = 1;
+    else if (l.y == GRID_WIDTH - 1) l.y = GRID_WIDTH - 2;
   } else {
     /* No door (first map, or a fly): drop onto a random path tile. */
     do {
